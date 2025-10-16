@@ -37,12 +37,12 @@ const mediaQuery = () => {
 
 const handleSystemThemeChange = () => {
     const currentAppearance = localStorage.getItem('appearance') as Appearance;
-    applyTheme(currentAppearance || 'system');
+    applyTheme(currentAppearance || 'light');
 };
 
 export function initializeTheme() {
     const savedAppearance =
-        (localStorage.getItem('appearance') as Appearance) || 'system';
+        (localStorage.getItem('appearance') as Appearance) || 'light';
 
     applyTheme(savedAppearance);
 
@@ -51,32 +51,33 @@ export function initializeTheme() {
 }
 
 export function useAppearance() {
-    const [appearance, setAppearance] = useState<Appearance>('system');
+    // Initialize from localStorage immediately
+    const [appearance, setAppearance] = useState<Appearance>(() => {
+        if (typeof window === 'undefined') return 'light';
+        return (localStorage.getItem('appearance') as Appearance) || 'light';
+    });
 
     const updateAppearance = useCallback((mode: Appearance) => {
         setAppearance(mode);
-
-        // Store in localStorage for client-side persistence...
         localStorage.setItem('appearance', mode);
-
-        // Store in cookie for SSR...
         setCookie('appearance', mode);
-
         applyTheme(mode);
     }, []);
 
     useEffect(() => {
-        const savedAppearance = localStorage.getItem(
-            'appearance',
-        ) as Appearance | null;
-        updateAppearance(savedAppearance || 'system');
-
-        return () =>
-            mediaQuery()?.removeEventListener(
-                'change',
-                handleSystemThemeChange,
-            );
-    }, [updateAppearance]);
+        // Apply theme on mount
+        applyTheme(appearance);
+        
+        // Listen for system theme changes
+        const handleChange = () => {
+            if (appearance === 'system') {
+                applyTheme('system');
+            }
+        };
+        
+        mediaQuery()?.addEventListener('change', handleChange);
+        return () => mediaQuery()?.removeEventListener('change', handleChange);
+    }, [appearance]); // Only depend on appearance, not updateAppearance
 
     return { appearance, updateAppearance } as const;
 }
