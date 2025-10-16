@@ -22,6 +22,17 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'first_name',
+        'last_name',
+        'phone',
+        'address',
+        'barangay',
+        'birth_date',
+        'gender',
+        'status',
+        'citizen_id',
+        'is_verified',
     ];
 
     /**
@@ -47,6 +58,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'birth_date' => 'date',
+            'last_login_at' => 'datetime',
         ];
     }
 }

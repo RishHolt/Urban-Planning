@@ -3,6 +3,7 @@ import { router } from '@inertiajs/react';
 import Sidebar from './Sidebar';
 import Topnav from './Topnav';
 import Main from './Main';
+import { Spinner, Button } from '../components';
 
 interface AppLayoutProps {
     children: React.ReactNode;
@@ -36,11 +37,8 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     // Show loading while checking authentication
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-primary">Loading...</p>
-                </div>
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Spinner size="lg" label="Loading..." />
             </div>
         );
     }
@@ -49,15 +47,15 @@ const AppLayout = ({ children }: AppLayoutProps) => {
     const savedUser = localStorage.getItem('user');
     if (!savedUser) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-primary mb-4">Please log in to access the dashboard</p>
-                    <button 
+                    <p className="text-gray-600 mb-4">Please log in to access the dashboard</p>
+                    <Button 
                         onClick={() => router.visit('/')}
-                        className="btn-primary"
+                        variant="primary"
                     >
                         Go to Login
-                    </button>
+                    </Button>
                 </div>
             </div>
         );

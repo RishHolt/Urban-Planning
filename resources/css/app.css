@@ -225,59 +225,59 @@
 }
 
 .dark {
-    /* Better dark mode colors with improved contrast */
-    --color-background: #0f172a;        /* Slate-900 - softer dark blue */
-    --color-surface: #1e293b;           /* Slate-800 - elevated surface */
-    --color-surface-variant: #334155;   /* Slate-700 - variant surface */
-    --color-text-primary: #f1f5f9;      /* Slate-100 - softer white */
-    --color-text-secondary: #cbd5e1;    /* Slate-300 - readable gray */
-    --color-text-muted: #94a3b8;        /* Slate-400 - muted text */
-    --color-border: #334155;            /* Slate-700 - visible borders */
-    --color-border-light: #475569;      /* Slate-600 - lighter borders */
+    /* Subtle dark mode colors with muted tones */
+    --color-background: #111827;        /* Gray-900 - neutral dark */
+    --color-surface: #1f2937;           /* Gray-800 - elevated surface */
+    --color-surface-variant: #374151;   /* Gray-700 - variant surface */
+    --color-text-primary: #f9fafb;      /* Gray-50 - soft white */
+    --color-text-secondary: #d1d5db;    /* Gray-300 - readable gray */
+    --color-text-muted: #9ca3af;        /* Gray-400 - muted text */
+    --color-border: #374151;            /* Gray-700 - visible borders */
+    --color-border-light: #4b5563;      /* Gray-600 - lighter borders */
     
-    /* Keep primary colors vibrant but not overpowering */
-    --color-primary: #4ade80;           /* Green-400 - vibrant green */
-    --color-primary-dark: #22c55e;      /* Green-500 */
-    --color-primary-light: #86efac;     /* Green-300 */
-    --color-secondary: #60a5fa;         /* Blue-400 - vibrant blue */
-    --color-secondary-dark: #3b82f6;    /* Blue-500 */
-    --color-secondary-light: #93c5fd;   /* Blue-300 */
-    --color-accent: #fbbf24;            /* Amber-400 - warm accent */
-    --color-accent-dark: #f59e0b;       /* Amber-500 */
-    --color-accent-light: #fcd34d;      /* Amber-300 */
+    /* Muted primary colors - less vibrant */
+    --color-primary: #6b7280;           /* Gray-500 - muted primary */
+    --color-primary-dark: #4b5563;      /* Gray-600 - darker variant */
+    --color-primary-light: #9ca3af;     /* Gray-400 - lighter variant */
+    --color-secondary: #6b7280;         /* Gray-500 - muted secondary */
+    --color-secondary-dark: #4b5563;    /* Gray-600 - darker variant */
+    --color-secondary-light: #9ca3af;   /* Gray-400 - lighter variant */
+    --color-accent: #d97706;            /* Amber-600 - muted accent */
+    --color-accent-dark: #b45309;       /* Amber-700 - darker variant */
+    --color-accent-light: #f59e0b;      /* Amber-500 - lighter variant */
     
     /* Legacy variables for compatibility */
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --card: #1e293b;
-    --card-foreground: #f1f5f9;
-    --popover: #1e293b;
-    --popover-foreground: #f1f5f9;
+    --background: #111827;
+    --foreground: #f9fafb;
+    --card: #1f2937;
+    --card-foreground: #f9fafb;
+    --popover: #1f2937;
+    --popover-foreground: #f9fafb;
     --primary: var(--color-primary);
-    --primary-foreground: #000000;
+    --primary-foreground: #ffffff;
     --secondary: var(--color-secondary);
-    --secondary-foreground: #000000;
-    --muted: #334155;
-    --muted-foreground: #94a3b8;
+    --secondary-foreground: #ffffff;
+    --muted: #374151;
+    --muted-foreground: #9ca3af;
     --accent: var(--color-accent);
-    --accent-foreground: #000000;
-    --destructive: #ff6b6b;
+    --accent-foreground: #ffffff;
+    --destructive: #ef4444;
     --destructive-foreground: #ffffff;
-    --border: #334155;
-    --input: #334155;
+    --border: #374151;
+    --input: #374151;
     --ring: var(--color-primary);
     --chart-1: var(--color-primary);
     --chart-2: var(--color-secondary);
     --chart-3: var(--color-accent);
-    --chart-4: #4ade80;
-    --chart-5: #22d3ee;
-    --sidebar: #0f172a;
-    --sidebar-foreground: #f1f5f9;
+    --chart-4: #6b7280;
+    --chart-5: #9ca3af;
+    --sidebar: #111827;
+    --sidebar-foreground: #f9fafb;
     --sidebar-primary: var(--color-primary);
-    --sidebar-primary-foreground: #000000;
+    --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: var(--color-accent);
-    --sidebar-accent-foreground: #000000;
-    --sidebar-border: #334155;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: #374151;
     --sidebar-ring: var(--color-primary);
 }
 
@@ -372,4 +372,55 @@
         color: var(--color-text-primary);
         font-family: var(--font-family-sans);
     }
+}
+
+/* Dropdown Animations */
+@keyframes dropdownSlideIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(-8px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes dropdownSlideOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.95) translateY(-8px);
+    }
+}
+
+/* Dropdown Button Hover Fix */
+.profile-dropdown .group:hover {
+    transform: none !important;
+}
+
+.profile-dropdown button:hover {
+    transform: none !important;
+}
+
+/* Custom scrollbar for chat */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }

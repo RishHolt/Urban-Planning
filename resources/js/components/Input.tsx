@@ -1,4 +1,5 @@
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState } from "react";
+import { X, Eye, EyeOff } from "lucide-react";
 
 type InputProps = {
   label?: string;
@@ -12,6 +13,12 @@ type InputProps = {
   size?: "sm" | "md" | "lg";
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  state?: "default" | "error" | "success" | "warning";
+  prefix?: React.ReactNode;
+  suffix?: React.ReactNode;
+  showCharCount?: boolean;
+  clearable?: boolean;
+  onClear?: () => void;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -28,12 +35,50 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       size = "md",
       leftIcon,
       rightIcon,
+      state = "default",
+      prefix,
+      suffix,
+      showCharCount = false,
+      clearable = false,
+      onClear,
       id,
+      type = "text",
+      value,
+      onChange,
+      maxLength,
       ...props
     },
     ref
   ) => {
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const [showPassword, setShowPassword] = useState(false);
+    const [internalValue, setInternalValue] = useState(value || "");
+
+    const isPassword = type === "password";
+    const currentValue = value !== undefined ? value : internalValue;
+    const hasValue = currentValue && currentValue.toString().length > 0;
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (onChange) {
+        onChange(e);
+      } else {
+        setInternalValue(e.target.value);
+      }
+    };
+
+    const handleClear = () => {
+      if (onClear) {
+        onClear();
+      } else if (onChange) {
+        const syntheticEvent = {
+          target: { value: "" },
+          currentTarget: { value: "" }
+        } as React.ChangeEvent<HTMLInputElement>;
+        onChange(syntheticEvent);
+      } else {
+        setInternalValue("");
+      }
+    };
 
     const sizeClasses = {
       sm: "px-3 py-1.5 text-sm",
@@ -41,29 +86,31 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       lg: "px-4 py-3 text-base",
     };
 
+    const stateClasses = {
+      default: "border-gray-300 focus:border-primary focus:ring-primary/20",
+      error: "border-red-500 focus:border-red-500 focus:ring-red-500/20 bg-red-50",
+      success: "border-green-500 focus:border-green-500 focus:ring-green-500/20 bg-green-50",
+      warning: "border-yellow-500 focus:border-yellow-500 focus:ring-yellow-500/20 bg-yellow-50",
+    };
+
     const variantClasses = {
       outlined: `
-        border border-gray-300 bg-white
-        focus:border-primary focus:ring-2 focus:ring-primary/20
-        disabled:bg-gray-50 disabled:text-gray-500
+        border bg-white
+        focus:ring-2 focus:ring-offset-0
+        disabled:bg-gray-50 disabled:text-gray-500 disabled:border-gray-200
       `,
       filled: `
-        border-0 bg-gray-100 border-b-2 border-gray-300
-        focus:bg-gray-50 focus:border-primary
+        border-0 bg-gray-100 border-b-2
+        focus:bg-gray-50 focus:ring-0
         disabled:bg-gray-200 disabled:text-gray-500
       `,
     };
 
     const baseInputClasses = `
-      w-full rounded-md transition-colors duration-200
-      placeholder:text-gray-400 focus:outline-none
-      text-gray-900
+      w-full rounded-lg transition-all duration-200
       ${sizeClasses[size as keyof typeof sizeClasses]}
       ${variantClasses[variant as keyof typeof variantClasses]}
-      ${error ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : ""}
-      ${leftIcon ? "pl-10" : ""}
-      ${rightIcon ? "pr-10" : ""}
-      ${className}
+      ${stateClasses[state]}
     `;
 
     return (
@@ -72,37 +119,78 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block mb-1 font-medium text-gray-700 text-sm"
+            className="block mb-2 font-medium text-gray-700 text-sm"
           >
             {label}
             {required && <span className="ml-1 text-red-500">*</span>}
           </label>
         )}
 
-        {/* Input Container */}
-        <div className="relative">
-          {/* Left Icon */}
-          {leftIcon && (
-            <div className="left-0 absolute inset-y-0 flex items-center pl-3 pointer-events-none">
-              <div className="text-gray-400">{leftIcon}</div>
+        {/* Input Container with External Left Icon */}
+        <div className="flex items-center gap-3">
+          {/* Left Icon - Outside Input */}
+          {(leftIcon || prefix) && (
+            <div className="flex items-center text-gray-400">
+              {leftIcon || prefix}
             </div>
           )}
 
-          {/* Input */}
-          <input
-            ref={ref}
-            id={inputId}
-            className={baseInputClasses}
-            {...props}
-          />
+          {/* Input Container */}
+          <div className="flex-1 flex items-center border rounded-lg bg-white focus-within:ring-2 focus-within:ring-offset-0 focus-within:ring-primary/20 focus-within:border-primary">
+            {/* Input */}
+            <input
+              ref={ref}
+              id={inputId}
+              type={isPassword && showPassword ? "text" : type}
+              value={currentValue}
+              onChange={handleChange}
+              maxLength={maxLength}
+              className={`flex-1 border-0 bg-transparent focus:outline-none placeholder:text-gray-400 text-gray-900 ${sizeClasses[size as keyof typeof sizeClasses]} ${className}`}
+              {...props}
+            />
 
-          {/* Right Icon */}
-          {rightIcon && (
-            <div className="right-0 absolute inset-y-0 flex items-center pr-3 pointer-events-none">
-              <div className="text-gray-400">{rightIcon}</div>
+            {/* Right Icons Container */}
+            <div className="flex items-center gap-1">
+              {/* Clear Button */}
+              {clearable && hasValue && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  <X size={16} />
+                </button>
+              )}
+
+              {/* Password Toggle */}
+              {isPassword && (
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              )}
+
+              {/* Right Icon or Suffix */}
+              {rightIcon && !isPassword && !clearable && (
+                <div className="text-gray-400">{rightIcon}</div>
+              )}
+              
+              {suffix && !isPassword && !clearable && (
+                <div className="text-gray-400">{suffix}</div>
+              )}
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Character Count */}
+        {showCharCount && maxLength && (
+          <div className="mt-1 text-xs text-gray-500 text-right">
+            {currentValue.toString().length} / {maxLength}
+          </div>
+        )}
 
         {/* Helper Text or Error */}
         {(error || helperText) && (
