@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return redirect('/dashboard');
+    return redirect('/login');
 })->name('home');
 
 Route::get('/login', function () {
@@ -13,7 +13,7 @@ Route::get('/login', function () {
 
 Route::post('/login', function () {
     // Mock authentication - in real app, this would validate credentials
-    return redirect('/dashboard');
+    return redirect('/Dashboard');
 })->name('login.post');
 
 Route::group([], function () {
