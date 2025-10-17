@@ -24,11 +24,28 @@ const HousingDashboard = () => {
     return (
         <div className="space-y-6">
                 {/* Page Header */}
-                <Header 
-                    variant="primary"
-                    title="Housing Registry Dashboard"
-                    subtext="Manage housing applications and beneficiary assignments."
-                />
+                <div className="flex-shrink-0 mb-4 pb-2">
+                    <div className="flex justify-between">
+                        <Header 
+                            variant="primary"
+                            title="Housing Registry Dashboard"
+                            subtext="Manage housing applications and beneficiary assignments."
+                        />
+                        
+                        {/* Controls next to header */}
+                        <div className="flex items-center gap-3">
+                            <Button variant="secondary" icon={<UserPlus size={16} />}>
+                                New Application
+                            </Button>
+                            <Button variant="primary" icon={<Plus size={16} />}>
+                                Add Unit
+                            </Button>
+                            <div className="flex items-center bg-white px-3 py-2 border rounded-md text-gray-600 text-sm">
+                                <strong>Total Beneficiaries:</strong> <span className="ml-1 font-semibold text-blue-600">{beneficiaries.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Action Bar */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -37,14 +54,6 @@ const HousingDashboard = () => {
                             placeholder="Search beneficiaries..."
                             className="w-64"
                         />
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="secondary" icon={<UserPlus size={16} />}>
-                            New Application
-                        </Button>
-                        <Button variant="primary" icon={<Plus size={16} />}>
-                            Add Unit
-                        </Button>
                     </div>
                 </div>
 

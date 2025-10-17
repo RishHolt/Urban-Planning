@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, FileText, Building, Briefcase, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from '../../../components';
+import { router } from '@inertiajs/react';
 
 interface ZoningClearanceModalProps {
     isOpen: boolean;
@@ -12,31 +13,25 @@ const ZoningClearanceModal: React.FC<ZoningClearanceModalProps> = ({
     onClose
 }) => {
     const [expandedSections, setExpandedSections] = useState({
-        business: {
-            lotPlan: false,
-            leaseContract: false,
-            tct: false,
-            taxDeclaration: false,
-            propertyTax: false,
-            barangayClearance: false
-        },
-        building: {
-            lotPlan: false,
-            tct: false,
-            taxDeclaration: false,
-            propertyTax: false,
-            constructionPermit: false,
-            architecturalPlan: false
-        }
+        applicationForm: false,
+        locationMap: false,
+        lotPlan: false,
+        tct: false,
+        contractLease: false,
+        barangayClearance: false,
+        taxClearance: false,
+        buildingPlans: false,
+        environmentalCompliance: false,
+        dpwhClearance: false,
+        subdivisionPermit: false,
+        businessPermit: false,
+        fireSafetyClearance: false
     });
 
-    const toggleSection = (category: 'business' | 'building', section: string) => {
+    const toggleSection = (section: string) => {
         setExpandedSections(prev => ({
             ...prev,
-            [category]: {
-                ...prev[category],
-                [section]: !(prev[category] as any)[section]
-            }
+            [section]: !prev[section as keyof typeof prev]
         }));
     };
 
@@ -76,138 +71,114 @@ const ZoningClearanceModal: React.FC<ZoningClearanceModalProps> = ({
                         </p>
                     </div>
 
-                    {/* Two Column Layout */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        {/* Business Requirements */}
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-2 mb-3">
-                                <Briefcase className="w-4 h-4 text-green-600" />
-                                <h3 className="text-lg font-bold text-gray-800">BUSINESS</h3>
-                            </div>
-                            
-                            <div className="space-y-2">
-                                {[
-                                    { 
-                                        key: 'lotPlan', 
-                                        title: 'Lot plan with vicinity map',
-                                        description: 'Certified by Geodetic Engineer'
-                                    },
-                                    { 
-                                        key: 'leaseContract', 
-                                        title: 'Lease contract/consent',
-                                        description: 'From property owner'
-                                    },
-                                    { 
-                                        key: 'tct', 
-                                        title: 'TCT (land title)',
-                                        description: 'Certified true copy'
-                                    },
-                                    { 
-                                        key: 'taxDeclaration', 
-                                        title: 'Tax Declaration',
-                                        description: 'Land/building from Assessor'
-                                    },
-                                    { 
-                                        key: 'propertyTax', 
-                                        title: 'Property tax receipts',
-                                        description: 'Current year payment'
-                                    },
-                                    { 
-                                        key: 'barangayClearance', 
-                                        title: 'Barangay Clearance',
-                                        description: 'From business location'
-                                    }
-                                ].map((req) => (
-                                    <div key={req.key} className="bg-gray-50 border border-gray-200 rounded-lg">
-                                        <button
-                                            onClick={() => toggleSection('business', req.key)}
-                                            className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-gray-100 transition-colors"
-                                        >
-                                            <span className="text-sm font-medium text-gray-800">
-                                                {req.title}
-                                            </span>
-                                            {expandedSections.business[req.key as keyof typeof expandedSections.business] ? (
-                                                <ChevronUp className="w-4 h-4 text-gray-500" />
-                                            ) : (
-                                                <ChevronDown className="w-4 h-4 text-gray-500" />
-                                            )}
-                                        </button>
-                                        {expandedSections.business[req.key as keyof typeof expandedSections.business] && (
-                                            <div className="px-3 pb-2 border-t border-gray-200">
-                                                <p className="text-xs text-gray-600 mt-1">
-                                                    {req.description}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                    {/* Requirements List */}
+                    <div className="space-y-3 mb-6">
+                        <div className="flex items-center space-x-2 mb-4">
+                            <FileText className="w-5 h-5 text-green-600" />
+                            <h3 className="text-lg font-bold text-gray-800">REQUIRED DOCUMENTS</h3>
                         </div>
-
-                        {/* Building Requirements */}
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-2 mb-3">
-                                <Building className="w-4 h-4 text-green-600" />
-                                <h3 className="text-lg font-bold text-gray-800">BUILDING</h3>
-                            </div>
-                            
-                            <div className="space-y-2">
-                                {[
-                                    { 
-                                        key: 'lotPlan', 
-                                        title: 'Lot plan with vicinity map',
-                                        description: 'Certified by Geodetic Engineer'
-                                    },
-                                    { 
-                                        key: 'tct', 
-                                        title: 'TCT (land title)',
-                                        description: 'Certified true copy'
-                                    },
-                                    { 
-                                        key: 'taxDeclaration', 
-                                        title: 'Tax Declaration',
-                                        description: 'Land/building from Assessor'
-                                    },
-                                    { 
-                                        key: 'propertyTax', 
-                                        title: 'Property tax receipts',
-                                        description: 'Current year payment'
-                                    },
-                                    { 
-                                        key: 'constructionPermit', 
-                                        title: 'Construction Permit',
-                                        description: 'From barangay'
-                                    },
-                                    { 
-                                        key: 'architecturalPlan', 
-                                        title: 'Architectural Plan',
-                                        description: 'Site Development Plan (1 set)'
-                                    }
-                                ].map((req) => (
-                                    <div key={req.key} className="bg-gray-50 border border-gray-200 rounded-lg">
-                                        <button
-                                            onClick={() => toggleSection('building', req.key)}
-                                            className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-gray-100 transition-colors"
-                                        >
-                                            <span className="text-sm font-medium text-gray-800">
-                                                {req.title}
-                                            </span>
-                                            {expandedSections.building[req.key as keyof typeof expandedSections.building] ? (
-                                                <ChevronUp className="w-4 h-4 text-gray-500" />
-                                            ) : (
-                                                <ChevronDown className="w-4 h-4 text-gray-500" />
-                                            )}
-                                        </button>
-                                        {expandedSections.building[req.key as keyof typeof expandedSections.building] && (
-                                            <div className="px-3 pb-2 border-t border-gray-200">
-                                                <p className="text-xs text-gray-600 mt-1">
-                                                    {req.description}
-                                                </p>
-                                            </div>
+                        
+                        <div className="space-y-2">
+                            {[
+                                { 
+                                    key: 'locationMap', 
+                                    title: 'Location Map / Vicinity Sketch',
+                                    description: 'Showing lot boundaries, adjacent streets, and nearby landmarks'
+                                },
+                                { 
+                                    key: 'lotPlan', 
+                                    title: 'Lot Plan / Site Development Plan',
+                                    description: 'Signed and sealed by a licensed Geodetic or Civil Engineer'
+                                },
+                                { 
+                                    key: 'tct', 
+                                    title: 'Transfer Certificate of Title (TCT) or Tax Declaration',
+                                    description: 'Proof of land ownership or right to use'
+                                },
+                                { 
+                                    key: 'contractLease', 
+                                    title: 'Contract of Lease / Deed of Sale / Authorization',
+                                    description: 'If applicant is not the property owner'
+                                },
+                                { 
+                                    key: 'barangayClearance', 
+                                    title: 'Barangay Clearance',
+                                    description: 'Certifying that the project is within the jurisdiction and has no objections. Click here to apply for barangay clearance.'
+                                },
+                                { 
+                                    key: 'taxClearance', 
+                                    title: 'Tax Clearance / Latest Real Property Tax Receipt',
+                                    description: 'Proof that property taxes are paid'
+                                },
+                                { 
+                                    key: 'buildingPlans', 
+                                    title: 'Building Plans or Sketch Plans',
+                                    description: 'For structures or development projects'
+                                },
+                                { 
+                                    key: 'environmentalCompliance', 
+                                    title: 'Environmental Compliance Certificate (ECC) or Certificate of Non-Coverage (CNC) - (If applicable)',
+                                    description: 'from DENR'
+                                },
+                                { 
+                                    key: 'dpwhClearance', 
+                                    title: 'DPWH or Road Right-of-Way Clearance - (if applicable)',
+                                    description: 'For properties near national roads'
+                                },
+                                { 
+                                    key: 'subdivisionPermit', 
+                                    title: 'Subdivision / Development Permit',
+                                    description: 'For subdivision or housing projects'
+                                },
+                                { 
+                                    key: 'businessPermit', 
+                                    title: 'Business Permit (if existing establishment)',
+                                    description: 'For expansion or renovation applications'
+                                },
+                                { 
+                                    key: 'fireSafetyClearance', 
+                                    title: 'Fire Safety Clearance - (if applicable)',
+                                    description: 'From BFP'
+                                }
+                            ].map((req) => (
+                                <div key={req.key} className="bg-gray-50 border border-gray-200 rounded-lg">
+                                    <button
+                                        onClick={() => toggleSection(req.key)}
+                                        className="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-gray-100 transition-colors"
+                                    >
+                                        <span className="text-sm font-medium text-gray-800">
+                                            {req.title}
+                                        </span>
+                                        {expandedSections[req.key as keyof typeof expandedSections] ? (
+                                            <ChevronUp className="w-4 h-4 text-gray-500" />
+                                        ) : (
+                                            <ChevronDown className="w-4 h-4 text-gray-500" />
                                         )}
-                                    </div>
-                                ))}
-                            </div>
+                                    </button>
+                                    {expandedSections[req.key as keyof typeof expandedSections] && (
+                                        <div className="px-3 pb-2 border-t border-gray-200">
+                                            <p className="text-xs text-gray-600 mt-1">
+                                                {req.key === 'barangayClearance' ? (
+                                                    <>
+                                                        Certifying that the project is within the jurisdiction and has no objections.{' '}
+                                                        <button 
+                                                            className="text-green-600 hover:text-green-700 underline font-medium"
+                                                            onClick={() => {
+                                                                // Navigate to barangay clearance application (placeholder)
+                                                                alert('Barangay clearance application page will be implemented soon');
+                                                            }}
+                                                        >
+                                                            Click here to apply for barangay clearance
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    req.description
+                                                )}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
                         </div>
                     </div>
 
@@ -244,21 +215,37 @@ const ZoningClearanceModal: React.FC<ZoningClearanceModalProps> = ({
                 </div>
 
                 {/* Action Buttons - Fixed */}
-                <div className="flex justify-end space-x-3 p-4 border-t border-gray-200 flex-shrink-0">
+                <div className="flex justify-between items-center p-4 border-t border-gray-200 flex-shrink-0">
                     <Button
-                        onClick={onClose}
-                        variant="outlined"
+                        onClick={() => {
+                            onClose();
+                            router.visit('/my-applications');
+                        }}
+                        variant="ghost"
                         size="md"
+                        className="text-gray-600 hover:text-gray-800"
                     >
-                        Other Services
+                        My Applications
                     </Button>
-                    <Button
-                        onClick={onClose}
-                        variant="success"
-                        size="md"
-                    >
-                        Apply Now
-                    </Button>
+                    <div className="flex space-x-3">
+                        <Button
+                            onClick={onClose}
+                            variant="outlined"
+                            size="md"
+                        >
+                            Other Services
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                onClose();
+                                router.visit('/zoning-clearance/apply');
+                            }}
+                            variant="success"
+                            size="md"
+                        >
+                            Apply Now
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

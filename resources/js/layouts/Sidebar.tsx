@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Logo from "../assets/Logo.svg";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import {
 	LayoutDashboard,
 	Map,
@@ -17,6 +17,7 @@ import {
 	CheckCircle,
 	AlertTriangle,
 	Wrench,
+	ArrowLeft,
 } from "lucide-react";
 import { Link, router, usePage } from "@inertiajs/react";
 import Swal from "../components/Swal";
@@ -28,6 +29,7 @@ interface SidebarProps {
 
 const Sidebar = ({ onClose }: SidebarProps) => {
 	const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+	const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 	const { url } = usePage();
 	
 	// Get user from localStorage
@@ -68,6 +70,21 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 			setOpenDropdown(currentRoute.label);
 		}
 	}, [url, sidebarRoutes]);
+
+	// Close profile dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as Element;
+			if (isProfileDropdownOpen && !target.closest('.profile-dropdown-container')) {
+				setIsProfileDropdownOpen(false);
+			}
+		};
+
+		document.addEventListener('mousedown', handleClickOutside);
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, [isProfileDropdownOpen]);
 
 	// Removed auto-open dropdown behavior - let users manually open dropdowns
 
@@ -160,23 +177,6 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 					</div>
 				</div>
 				<div className="flex flex-col flex-1 bg-background p-4 border-border border-r-2 size-full overflow-y-auto custom-scrollbar">
-
-					{/* Profile card */}
-					<div className="flex flex-row items-center space-x-4 bg-secondary/10 shadow-theme-sm mb-4 p-4 rounded-theme-lg border border-secondary/20">
-						<div className="bg-surface shadow-theme-sm p-1 rounded-full">
-							<div className="bg-accent p-2 rounded-full size-fit">
-								<User className="text-white"/>
-							</div>
-						</div>
-						<div className="flex flex-col">
-							<span className="text-secondary text-sm font-medium">
-								Welcome! {user?.role?.replace('_', ' ').toLowerCase()}.
-							</span>
-							<span className="font-semibold text-primary text-lg">
-								{user?.firstName} {user?.lastName}
-							</span>
-						</div>
-					</div>
 
 					{/* Navigation links */}
 					{sidebarRoutes.map((route) => {
@@ -294,22 +294,67 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 							</div>
 						);
 					})}
-					{/* Settings and logout */}
+					
+					{/* Profile dropdown at bottom */}
 					<div className="flex flex-1 items-end">
-						<div className="flex space-x-2 mt-4 pt-4 border-border border-t-2">
-							<div className="flex">
-								<button className="flex flex-row items-center space-x-4 hover:bg-secondary/25 px-4 py-3 rounded-theme-lg w-full text-secondary transition-all duration-200 hover:shadow-theme-sm">
-									<Settings size={20} className="text-secondary transition-colors" />
-									<span className="text-sm font-medium">Settings</span>
-								</button>
-							</div>
-							<button 
-								onClick={handleLogout}
-								className="flex flex-row items-center space-x-4 hover:bg-error/10 px-4 py-3 rounded-theme-lg w-full text-error transition-all duration-200 hover:shadow-theme-sm"
+						<div className="profile-dropdown-container relative w-full mt-4 pt-4 border-border border-t-2">
+							{/* Profile card button */}
+							<button
+								onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+								className="flex flex-row items-center space-x-4 bg-secondary/10 hover:bg-secondary/20 px-4 py-3 rounded-theme-lg w-full text-secondary transition-all duration-200 hover:shadow-theme-sm group"
 							>
-								<LogOut size={20} className="text-error group-hover:text-error/80 transition-colors" />
-								<span className="text-sm font-medium">Logout</span>
+								<div className="bg-surface shadow-theme-sm p-1 rounded-full">
+									<div className="bg-accent p-2 rounded-full size-fit">
+										<User className="text-white"/>
+									</div>
+								</div>
+								<div className="flex flex-col flex-1 text-left">
+									<span className="text-secondary text-sm font-medium">
+										Welcome! {user?.role?.replace('_', ' ').toLowerCase()}.
+									</span>
+									<span className="font-semibold text-primary text-lg">
+										{user?.firstName} {user?.lastName}
+									</span>
+								</div>
+								<div className={`transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`}>
+									<ChevronUp 
+										size={18} 
+										className="text-primary/60 group-hover:text-primary/80" 
+									/>
+								</div>
 							</button>
+							
+							{/* Profile dropdown menu */}
+							<div 
+								className={`
+									absolute bottom-full left-0 right-0 mb-2 bg-white rounded-theme-lg shadow-lg border border-gray-200 overflow-hidden transition-all duration-300 ease-in-out z-50
+									${isProfileDropdownOpen 
+										? 'opacity-100 visible translate-y-0' 
+										: 'opacity-0 invisible translate-y-2'
+									}
+								`}
+							>
+								<div className="py-2">
+									<button className="flex flex-row items-center space-x-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+										<Settings size={18} className="text-gray-600" />
+										<span className="text-sm font-medium">Settings</span>
+									</button>
+									<button 
+										onClick={() => router.visit('/')}
+										className="flex flex-row items-center space-x-3 w-full px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200"
+									>
+										<ArrowLeft size={18} className="text-green-600" />
+										<span className="text-sm font-medium">Return to Landing Page</span>
+									</button>
+									<button 
+										onClick={handleLogout}
+										className="flex flex-row items-center space-x-3 w-full px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
+									>
+										<LogOut size={18} className="text-red-600" />
+										<span className="text-sm font-medium">Logout</span>
+									</button>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

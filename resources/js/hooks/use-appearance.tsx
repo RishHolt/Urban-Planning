@@ -44,7 +44,12 @@ export function initializeTheme() {
     const savedAppearance =
         (localStorage.getItem('appearance') as Appearance) || 'light';
 
-    applyTheme(savedAppearance);
+    // Force light mode if no preference is saved
+    if (!localStorage.getItem('appearance')) {
+        applyTheme('light');
+    } else {
+        applyTheme(savedAppearance);
+    }
 
     // Add the event listener for system theme changes...
     mediaQuery()?.addEventListener('change', handleSystemThemeChange);

@@ -49,11 +49,22 @@ const Dashboard = () => {
     return (
         <div className="space-y-6">
             {/* Page Header */}
-            <Header 
-                variant="primary"
-                title="Welcome to Urban Planning System"
-                subtext="Manage zoning, building reviews, housing, and infrastructure projects efficiently."
-            />
+            <div className="flex-shrink-0 mb-4 pb-2">
+                <div className="flex justify-between">
+                    <Header 
+                        variant="primary"
+                        title="Welcome to Urban Planning System"
+                        subtext="Manage zoning, building reviews, housing, and infrastructure projects efficiently."
+                    />
+                    
+                    {/* Controls next to header */}
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center bg-white px-3 py-2 border rounded-md text-gray-600 text-sm">
+                            <strong>Total Modules:</strong> <span className="ml-1 font-semibold text-blue-600">4</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

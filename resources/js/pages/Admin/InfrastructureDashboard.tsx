@@ -30,11 +30,25 @@ const InfrastructureDashboard = () => {
     return (
         <div className="space-y-6">
                 {/* Page Header */}
-                <Header 
-                    variant="secondary"
-                    title="Infrastructure Dashboard"
-                    subtext="Manage infrastructure projects and asset maintenance."
-                />
+                <div className="flex-shrink-0 mb-4 pb-2">
+                    <div className="flex justify-between">
+                        <Header 
+                            variant="secondary"
+                            title="Infrastructure Dashboard"
+                            subtext="Manage infrastructure projects and asset maintenance."
+                        />
+                        
+                        {/* Controls next to header */}
+                        <div className="flex items-center gap-3">
+                            <Button variant="secondary" icon={<Plus size={16} />}>
+                                New Project
+                            </Button>
+                            <div className="flex items-center bg-white px-3 py-2 border rounded-md text-gray-600 text-sm">
+                                <strong>Total Projects:</strong> <span className="ml-1 font-semibold text-blue-600">{projects.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Action Bar */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -44,9 +58,6 @@ const InfrastructureDashboard = () => {
                             className="w-64"
                         />
                     </div>
-                    <Button variant="secondary" icon={<Plus size={16} />}>
-                        New Project
-                    </Button>
                 </div>
 
                 {/* Stats Cards */}

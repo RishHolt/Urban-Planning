@@ -235,10 +235,10 @@
     --color-border: #374151;            /* Gray-700 - visible borders */
     --color-border-light: #4b5563;      /* Gray-600 - lighter borders */
     
-    /* Muted primary colors - less vibrant */
-    --color-primary: #6b7280;           /* Gray-500 - muted primary */
-    --color-primary-dark: #4b5563;      /* Gray-600 - darker variant */
-    --color-primary-light: #9ca3af;     /* Gray-400 - lighter variant */
+    /* Keep primary green in dark mode too */
+    --color-primary: #4CAF50;           /* Green - same as light mode */
+    --color-primary-dark: #45a049;      /* Darker green variant */
+    --color-primary-light: #81c784;     /* Lighter green variant */
     --color-secondary: #6b7280;         /* Gray-500 - muted secondary */
     --color-secondary-dark: #4b5563;    /* Gray-600 - darker variant */
     --color-secondary-light: #9ca3af;   /* Gray-400 - lighter variant */

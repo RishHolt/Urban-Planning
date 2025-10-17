@@ -6,9 +6,9 @@ interface MainProps {
 
 const Main = ({ children }: MainProps) => {
     return (
-        <div className="w-full bg-background p-6 overflow-y-auto text-primary min-h-screen">
-            <div className="container mx-auto">
-                <div className="bg-surface p-6 rounded-theme-lg shadow-theme-md">
+        <div className="w-full bg-background p-6 overflow-y-auto text-primary h-full">
+            <div className="container mx-auto h-full">
+                <div className="bg-surface p-6 rounded-theme-lg h-full shadow-theme-md">
                     {children}
                 </div>
             </div>

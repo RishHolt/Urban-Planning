@@ -8,6 +8,7 @@ export { default as Pagination } from './Pagination';
 export { default as SearchInput } from './SearchInput';
 export { default as TextArea } from './TextArea';
 export { default as Header } from './Header';
+export { default as PageHeader } from './PageHeader';
 export { default as Timeline } from './Timeline';
 export { default as Swal } from './Swal';
 
@@ -28,6 +29,10 @@ export { default as Spinner, LoadingButton, LoadingOverlay } from './Spinner';
 export { default as Skeleton, SkeletonCard, SkeletonTable, SkeletonList, SkeletonForm, SkeletonProfile, SkeletonDashboard } from './Skeleton';
 export { default as Breadcrumbs, MobileBreadcrumbs, BreadcrumbWithDropdown } from './Breadcrumbs';
 export { default as Avatar, AvatarGroup, UserAvatar } from './Avatar';
+
+// Map Components
+export { default as LocationPicker } from './LocationPicker';
+export { default as LocationViewer } from './LocationViewer';
 
 // Re-export types for better TypeScript support
 export type { default as ButtonProps } from './Button';

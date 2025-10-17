@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Menu, Moon, Sun, Bell } from "lucide-react"
-import { Link, usePage } from "@inertiajs/react";
+import { Link, usePage, router } from "@inertiajs/react";
 import { useAppearance } from "../hooks/use-appearance";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -12,6 +13,24 @@ const Topnav = ({ onToggleSidebar }: HeaderProps) => {
 	const { url } = usePage();
 	const pathnames = url.split("/").filter(x => x);
 	const { appearance, updateAppearance } = useAppearance();
+
+	// Generate breadcrumb items from URL path
+	const breadcrumbItems = pathnames.map((name, idx) => {
+		const routeTo = "/" + pathnames.slice(0, idx + 1).join("/");
+		const isLast = idx === pathnames.length - 1;
+		
+		return {
+			label: decodeURIComponent(name.replace(/-/g, " ")),
+			href: isLast ? undefined : routeTo,
+			current: isLast
+		};
+	});
+
+	const handleBreadcrumbClick = (item: any, index: number) => {
+		if (item.href) {
+			router.visit(item.href);
+		}
+	};
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -55,24 +74,13 @@ const Topnav = ({ onToggleSidebar }: HeaderProps) => {
 				</button>
 				<div className="flex flex-col">
 					<h1 className="font-bold text-primary text-lg">Urban Planning, Zoning & Housing</h1>
-					<nav aria-label="Breadcrumb" className="text-secondary text-sm">
-						<ol className="flex items-center space-x-1">
-							<Link href="/dashboard" className="hover:underline">Home</Link>
-							{pathnames.map((name, idx) => {
-								const routeTo = "/" + pathnames.slice(0, idx + 1).join("/");
-								return (
-									<span key={routeTo} className="flex items-center">
-										<span className="mx-1">/</span>
-										{idx === pathnames.length - 1 ? (
-											<span className="font-semibold">{decodeURIComponent(name.replace(/-/g, " "))}</span>
-										) : (
-											<Link href={routeTo} className="hover:underline">{decodeURIComponent(name.replace(/-/g, " "))}</Link>
-										)}
-									</span>
-								);
-							})}
-						</ol>
-					</nav>
+					<Breadcrumbs
+						items={breadcrumbItems}
+						onItemClick={handleBreadcrumbClick}
+						className="text-secondary text-sm"
+						showHome={true}
+						homeHref="/dashboard"
+					/>
 				</div>
 				<div className="flex flex-1 justify-end items-center space-x-4">
 					<div className="flex flex-row space-x-2 font-bold text-secondary">
