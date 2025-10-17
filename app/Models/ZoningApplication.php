@@ -45,6 +45,10 @@ class ZoningApplication extends Model
         'processing_fee',
         'total_fee',
         'assigned_staff_id',
+        'technical_staff_id',
+        'forwarded_to_technical_at',
+        'returned_from_technical_at',
+        'technical_review_started',
         'reviewed_at',
         'additional_notes',
     ];
@@ -52,6 +56,9 @@ class ZoningApplication extends Model
     protected $casts = [
         'or_date' => 'date',
         'location_confirmed_at' => 'datetime',
+        'forwarded_to_technical_at' => 'datetime',
+        'returned_from_technical_at' => 'datetime',
+        'technical_review_started' => 'boolean',
         'reviewed_at' => 'datetime',
         'total_lot_area_sqm' => 'decimal:2',
         'total_floor_area_sqm' => 'decimal:2',
@@ -120,6 +127,14 @@ class ZoningApplication extends Model
     }
 
     /**
+     * Get the technical staff member
+     */
+    public function technicalStaff(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'technical_staff_id');
+    }
+
+    /**
      * Get the user who confirmed the location
      */
     public function locationConfirmedBy(): BelongsTo
@@ -133,6 +148,11 @@ class ZoningApplication extends Model
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
+    }
+
+    public function history()
+    {
+        return $this->hasMany(ApplicationHistory::class, 'zoning_application_id');
     }
 
     /**
@@ -173,5 +193,18 @@ class ZoningApplication extends Model
     public function isPaymentConfirmed(): bool
     {
         return $this->payment_status === 'confirmed';
+    }
+
+    /**
+     * Get current department handling application
+     */
+    public function getCurrentDepartment(): string
+    {
+        return match($this->status) {
+            'pending', 'initial_review', 'awaiting_approval', 'approved', 'rejected' => 'zoning',
+            'technical_review' => 'technical',
+            'requires_changes' => 'citizen',
+            default => 'zoning'
+        };
     }
 }

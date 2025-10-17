@@ -17,7 +17,9 @@ import {
 	CheckCircle,
 	AlertTriangle,
 	Wrench,
+	History,
 	ArrowLeft,
+	Eye,
 } from "lucide-react";
 import { Link, router, usePage } from "@inertiajs/react";
 import Swal from "../components/Swal";
@@ -139,6 +141,9 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 		CheckCircle,
 		AlertTriangle,
 		Wrench,
+		History,
+		Eye,
+		Settings,
 	};
 
 	// Routes are already filtered in getSidebarRoutes() based on user role
@@ -195,7 +200,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 												group relative overflow-hidden
 												${isActive
 													? 'bg-primary text-white shadow-theme-md font-semibold'
-													: 'text-primary hover:bg-primary/10 hover:shadow-theme-sm'
+													: 'text-gray-600 hover:bg-primary/10 hover:shadow-theme-sm'
 												}
 												${isDropdownOpen ? 'ring-2 ring-primary/20' : ''}
 											`}

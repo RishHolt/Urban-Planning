@@ -16,25 +16,6 @@ Route::get('/citizen', function () {
     return Inertia::render('Users/Home');
 })->name('citizen.home');
 
-Route::get('/services/aics', function () {
-    return Inertia::render('Users/Services/AICS');
-})->name('services.aics');
-
-Route::get('/services/ccswdd', function () {
-    return Inertia::render('Users/Services/CCSWDD');
-})->name('services.ccswdd');
-
-Route::get('/services/osca', function () {
-    return Inertia::render('Users/Services/OSCA');
-})->name('services.osca');
-
-Route::get('/services/pdao', function () {
-    return Inertia::render('Users/Services/PDAO');
-})->name('services.pdao');
-
-Route::get('/services/livelihood', function () {
-    return Inertia::render('Users/Services/Livelihood');
-})->name('services.livelihood');
 
 Route::get('/zoning-clearance/apply', function () {
     return Inertia::render('Users/Services/ZoningClearanceApplication');
@@ -47,6 +28,24 @@ Route::get('/my-applications', function () {
 Route::get('/my-applications/{id}', function ($id) {
     return Inertia::render('Users/Services/ApplicationDetails');
 })->name('my-applications.show');
+
+// Housing Application Routes
+Route::get('/housing-assistance/apply', function () {
+    return Inertia::render('Users/Services/HousingApplication');
+})->name('housing-assistance.apply');
+
+Route::get('/my-housing-applications', function () {
+    return Inertia::render('Users/Services/MyHousingApplications');
+})->name('my-housing-applications');
+
+Route::get('/my-housing-applications/{id}', function ($id) {
+    return Inertia::render('Users/Services/HousingApplicationDetails', ['applicationId' => $id]);
+})->name('my-housing-applications.show');
+
+// Public Zoning Map Route
+Route::get('/zoning/map', function () {
+    return Inertia::render('Users/Services/ZoningMap');
+})->name('zoning.map.public');
 
 // CSRF Token endpoint
 Route::get('/api/csrf-token', function () {
@@ -118,11 +117,44 @@ Route::prefix('api')->middleware('api')->group(function () {
         ], 404);
     });
 
-    // Admin - Get Zoning Applications
-    Route::get('/zoning/applications', [App\Http\Controllers\ZoningApplicationController::class, 'index']);
-    Route::get('/zoning/applications/{id}', [App\Http\Controllers\ZoningApplicationController::class, 'show']);
+    // Zoning Applications - Admin and Citizen access
+    Route::get('/zoning/applications', [App\Http\Controllers\ZoningApplicationController::class, 'index'])->middleware('web');
+    Route::get('/zoning/applications/{id}', [App\Http\Controllers\ZoningApplicationController::class, 'show'])->middleware('web');
     Route::put('/zoning/applications/{id}', [App\Http\Controllers\ZoningApplicationController::class, 'update']);
     Route::post('/zoning/applications/{id}/confirm-location', [App\Http\Controllers\ZoningApplicationController::class, 'confirmLocation']);
+    
+    // Payment testing
+    Route::post('/zoning/applications/{applicationId}/payment/confirm', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'confirmPayment']);
+    Route::post('/zoning/applications/{applicationId}/payment/unpay', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'unpayPayment']);
+    
+    // Workflow transitions
+    Route::post('/zoning/applications/{applicationId}/start-initial-review', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'startInitialReview']);
+    Route::post('/zoning/applications/{applicationId}/forward-to-technical', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'forwardToTechnical']);
+    Route::post('/zoning/applications/{applicationId}/return-to-zoning', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'returnToZoning']);
+    Route::post('/zoning/applications/{applicationId}/approve', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'approve']);
+    
+    // Document review
+    Route::post('/zoning/applications/{applicationId}/documents/{documentId}/verify', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'verifyDocument']);
+    Route::post('/zoning/applications/{applicationId}/documents/{documentId}/reject', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'rejectDocument']);
+    Route::get('/zoning/applications/{applicationId}/documents/{documentId}/download', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'downloadDocument']);
+    Route::post('/zoning/applications/{applicationId}/documents/{documentId}/reupload', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'reuploadDocument']);
+    
+    // History
+    Route::get('/zoning/applications/{applicationId}/history', 
+        [App\Http\Controllers\ZoningApplicationController::class, 'getHistory']);
+    
+    // Users
+    Route::get('/users', [App\Http\Controllers\UserController::class, 'index']);
     
     // Zoning Map Data
     Route::get('/zoning/zones', [App\Http\Controllers\ZoningController::class, 'getZones']);
@@ -164,7 +196,7 @@ Route::group([], function () {
     })->name('zoning.dashboard');
     
     Route::get('zoning/applications', function () {
-        return Inertia::render('Admin/Module-1/ZoningDashboard');
+        return Inertia::render('Admin/Module-1/ZoningApplicationsTable');
     })->name('zoning.applications');
     
     Route::get('zoning/applications/{id}', function ($id) {
@@ -173,29 +205,66 @@ Route::group([], function () {
         ]);
     })->name('zoning.applications.show');
     
-    Route::get('zoning/map', function () {
+    Route::get('zoning/admin/map', function () {
         return Inertia::render('Admin/Module-1/ZoningMap');
-    })->name('zoning.map');
+    })->name('zoning.admin.map');
+    
+    // Housing Application Route
+    Route::get('housing/apply', function () {
+        return Inertia::render('Users/Services/HousingApplication');
+    })->name('housing.apply');
+    
+    Route::get('zoning/logs', function () {
+        return Inertia::render('Admin/Module-1/ZoningLogs');
+    })->name('zoning.logs');
+    
+    // Application Logs
+    Route::get('admin/logs', function () {
+        return Inertia::render('Admin/ApplicationLogs');
+    })->name('admin.logs');
     
     // Building Review Routes
     Route::get('building', function () {
         return Inertia::render('Admin/BuildingDashboard');
     })->name('building.dashboard');
     
-    // Housing Registry Routes
+Route::get('building/review', function () {
+    return Inertia::render('Admin/Module-2/BuildingReviewList');
+})->name('building.review.list');
+
+Route::get('building/review/{id}', function ($id) {
+    return Inertia::render('Admin/Module-2/BuildingReview', ['applicationId' => $id]);
+})->name('building.review');
+
+Route::get('building/logs', function () {
+    return Inertia::render('Admin/Module-2/BuildingLogs');
+})->name('building.logs');
+    
+    // Housing Registry Routes (Module-3)
     Route::get('housing', function () {
-        return Inertia::render('Admin/HousingDashboard');
+        return Inertia::render('Admin/Module-3/HousingDashboard');
     })->name('housing.dashboard');
     
-    // Occupancy Monitoring Routes
-    Route::get('occupancy', function () {
-        return Inertia::render('Admin/OccupancyDashboard');
-    })->name('occupancy.dashboard');
+    Route::get('housing/applications', function () {
+        return Inertia::render('Admin/Module-3/HousingApplicationsList');
+    })->name('housing.applications');
     
-    // Infrastructure Routes
-    Route::get('infrastructure', function () {
-        return Inertia::render('Admin/InfrastructureDashboard');
-    })->name('infrastructure.dashboard');
+    Route::get('housing/applications/{id}', function ($id) {
+        return Inertia::render('Admin/Module-3/HousingApplicationReview', ['applicationId' => $id]);
+    })->name('housing.applications.show');
+    
+    Route::get('housing/documents', function () {
+        return Inertia::render('Admin/Module-3/DocumentVerification');
+    })->name('housing.documents');
+    
+    Route::get('housing/inspections', function () {
+        return Inertia::render('Admin/Module-3/Inspections');
+    })->name('housing.inspections');
+    
+    
+    Route::get('housing/logs', function () {
+        return Inertia::render('Admin/Module-3/HousingLogs');
+    })->name('housing.logs');
     
     // User Management Routes
     Route::get('user-management', function () {

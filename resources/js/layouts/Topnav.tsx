@@ -61,7 +61,7 @@ const Topnav = ({ onToggleSidebar }: HeaderProps) => {
 
 	return (
 		<>
-			<div className="flex flex-row items-center space-x-6 bg-surface px-6 border-accent border-b-2 w-full min-h-18 shadow-theme-sm">
+			<div className="flex flex-row items-center space-x-6 bg-surface px-6 border-accent border-b-2 w-full min-h-18 shadow-theme-sm relative z-50">
 				<button 
 					onClick={() => {
 						console.log('Button clicked in Topnav');

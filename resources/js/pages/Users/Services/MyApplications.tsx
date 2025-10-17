@@ -106,12 +106,111 @@ const MyApplications: React.FC = () => {
     checkAuthStatus();
   }, []);
 
+  // Helper function to convert snake_case to camelCase
+  const toCamelCase = (obj: any): any => {
+    if (Array.isArray(obj)) {
+      return obj.map(item => toCamelCase(item));
+    } else if (obj !== null && typeof obj === 'object') {
+      return Object.keys(obj).reduce((acc, key) => {
+        const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+        acc[camelKey] = toCamelCase(obj[key]);
+        return acc;
+      }, {} as any);
+    }
+    return obj;
+  };
+
   // Load applications
   useEffect(() => {
     const loadApplications = async () => {
       setLoading(true);
       try {
-        // Mock data for now - replace with actual API call
+        // Fetch from API
+        const response = await fetch('/api/zoning/applications', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch applications');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Transform snake_case to camelCase for frontend
+          const transformedApps = result.data.map((app: any) => ({
+            id: app.id?.toString(),
+            applicationNumber: app.application_number,
+            status: app.status,
+            submittedAt: app.created_at,
+            reviewedAt: app.reviewed_at,
+            assignedStaff: app.assigned_staff,
+            
+            // Personal Information
+            firstName: app.first_name,
+            lastName: app.last_name,
+            address: app.address,
+            contactNumber: app.contact_number,
+            businessName: app.business_name,
+            email: app.email,
+            typeOfApplicant: app.type_of_applicant,
+
+            // Project Details
+            projectDescription: app.project_description,
+            projectType: app.project_type,
+            projectLocation: app.project_location,
+            totalLotAreaSqm: app.total_lot_area_sqm,
+            totalFloorAreaSqm: app.total_floor_area_sqm,
+
+            // Land Ownership
+            landOwnership: app.land_ownership,
+            nameOfOwner: app.name_of_owner,
+            tctNo: app.tct_no,
+            taxDeclarationNo: app.tax_declaration_no,
+            lotBlockSurveyNo: app.lot_block_survey_no,
+            barangayClearanceId: app.barangay_clearance_id,
+
+            // Documents - check if documents array exists
+            documentsSubmitted: {
+              siteDevelopmentPlan: app.documents?.some((d: any) => d.document_type === 'site_development_plan') || false,
+              vicinityMap: app.documents?.some((d: any) => d.document_type === 'vicinity_map') || false,
+              buildingPlan: app.documents?.some((d: any) => d.document_type === 'building_plan') || false,
+              environmentalClearance: app.documents?.some((d: any) => d.document_type === 'environmental_clearance') || false,
+              dpwhClearance: app.documents?.some((d: any) => d.document_type === 'dpwh_clearance') || false,
+              subdivisionPermit: app.documents?.some((d: any) => d.document_type === 'subdivision_permit') || false,
+              businessPermit: app.documents?.some((d: any) => d.document_type === 'business_permit') || false,
+              fireSafetyClearance: app.documents?.some((d: any) => d.document_type === 'fire_safety_clearance') || false
+            },
+            additionalNotes: app.additional_notes,
+
+            // Payment Information
+            orReferenceNumber: app.or_reference_number,
+            orDate: app.or_date,
+            paymentStatus: app.payment_status,
+
+            // Declaration
+            declarationAccepted: true,
+
+            // Fees
+            fees: {
+              applicationFee: parseFloat(app.application_fee || '0'),
+              baseFee: parseFloat(app.base_fee || '0'),
+              processingFee: parseFloat(app.processing_fee || '0'),
+              total: parseFloat(app.total_fee || '0')
+            }
+          }));
+
+          setApplications(transformedApps);
+        }
+      } catch (error) {
+        console.error('Error loading applications:', error);
+        // Keep empty array on error
+        setApplications([]);
+        
+        // Fallback to mock data for demo - remove this in production
         const mockApplications: Application[] = [
           {
             id: '1',
@@ -311,15 +410,18 @@ const MyApplications: React.FC = () => {
         ];
         
         setApplications(mockApplications);
-      } catch (error) {
-        console.error('Error loading applications:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadApplications();
-  }, []);
+    // Only load if user is authenticated
+    if (userData !== null) {
+      loadApplications();
+    } else {
+      setLoading(false);
+    }
+  }, [userData]);
 
   const handleUserDataChange = (user: ApiUser | null) => {
     setUserData(user);

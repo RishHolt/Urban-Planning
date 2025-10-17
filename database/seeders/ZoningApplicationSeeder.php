@@ -67,7 +67,7 @@ class ZoningApplicationSeeder extends Seeder
                 'or_reference_number' => 'OR-2024-001235',
                 'or_date' => '2024-01-14',
                 'payment_status' => 'confirmed',
-                'status' => 'under_review',
+                'status' => 'pending',
                 'additional_notes' => 'Commercial retail space development',
             ],
             [
@@ -94,7 +94,7 @@ class ZoningApplicationSeeder extends Seeder
                 'or_reference_number' => 'OR-2024-001236',
                 'or_date' => '2024-01-13',
                 'payment_status' => 'pending',
-                'status' => 'requires_changes',
+                'status' => 'pending',
                 'additional_notes' => 'Industrial manufacturing facility',
             ],
             [
@@ -121,7 +121,7 @@ class ZoningApplicationSeeder extends Seeder
                 'or_reference_number' => 'OR-2024-001237',
                 'or_date' => '2024-01-12',
                 'payment_status' => 'confirmed',
-                'status' => 'approved',
+                'status' => 'pending',
                 'additional_notes' => 'Single-family residential construction',
             ],
             [
@@ -148,7 +148,7 @@ class ZoningApplicationSeeder extends Seeder
                 'or_reference_number' => 'OR-2024-001238',
                 'or_date' => '2024-01-11',
                 'payment_status' => 'confirmed',
-                'status' => 'rejected',
+                'status' => 'pending',
                 'additional_notes' => 'High-rise residential development - rejected due to zoning restrictions',
             ],
         ];
@@ -173,12 +173,14 @@ class ZoningApplicationSeeder extends Seeder
                     'documentable_type' => ZoningApplication::class,
                     'documentable_id' => $application->id,
                     'document_type' => $docType,
+                    'document_category' => \App\Models\Document::getCategoryForType($docType),
                     'file_name' => $docType . '_' . $application->application_number . '.pdf',
                     'file_path' => 'zoning-clearance/' . $docType . '/' . $docType . '_' . $application->application_number . '.pdf',
                     'file_type' => 'pdf',
                     'file_size' => rand(100000, 2000000), // Random file size between 100KB and 2MB
                     'mime_type' => 'application/pdf',
                     'uploaded_by' => null, // No user context in seeder
+                    'verification_status' => 'pending',
                 ]);
             }
         }

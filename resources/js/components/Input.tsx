@@ -209,4 +209,39 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
 
 Input.displayName = "Input";
 
+// Simple Label component
+export const Label: React.FC<{ htmlFor?: string; children: React.ReactNode; className?: string }> = ({ htmlFor, children, className = "" }) => {
+  return (
+    <label htmlFor={htmlFor} className={`block text-sm font-medium text-gray-700 mb-1 ${className}`}>
+      {children}
+    </label>
+  );
+};
+
+// Simple Progress component
+export const Progress: React.FC<{ value: number; max?: number; className?: string; size?: 'sm' | 'md' | 'lg' }> = ({ 
+  value, 
+  max = 100, 
+  className = '', 
+  size = 'md' 
+}) => {
+  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
+  
+  const sizeClasses = {
+    sm: 'h-1',
+    md: 'h-2',
+    lg: 'h-3'
+  };
+
+  return (
+    <div className={`w-full bg-gray-200 rounded-full overflow-hidden ${sizeClasses[size]} ${className}`}>
+      <div
+        className="h-full bg-blue-600 transition-all duration-300 ease-in-out rounded-full"
+        style={{ width: `${percentage}%` }}
+      />
+    </div>
+  );
+};
+
+export { Input };
 export default Input;

@@ -21,6 +21,7 @@ const LoginPage: React.FC = () => {
     const [loginError, setLoginError] = useState('');
     const [currentEmail, setCurrentEmail] = useState<string>('');
     const [otpExpiry, setOtpExpiry] = useState<Date | null>(null);
+    const [currentOTPCode, setCurrentOTPCode] = useState<string>('');
 
     // Generate mock OTP
     const generateMockOTP = (): string => {
@@ -45,6 +46,7 @@ const LoginPage: React.FC = () => {
                 setCurrentEmail(email);
                 const expiryDate = new Date(response.expires_at || '');
                 setOtpExpiry(expiryDate);
+                setCurrentOTPCode(response.otp_code || '');
                 
                 // Log the OTP to console for demo purposes
                 console.log(`🔐 OTP for ${email}: ${response.otp_code} (expires at ${response.expires_at})`);
@@ -113,6 +115,7 @@ const LoginPage: React.FC = () => {
             
             if (response.success) {
                 setOtpExpiry(new Date(response.expires_at || ''));
+                setCurrentOTPCode(response.otp_code || '');
                 
                 // Log the new OTP to console for demo purposes
                 console.log(`🔄 New OTP: ${response.otp_code} (expires at ${response.expires_at})`);
@@ -184,9 +187,13 @@ const LoginPage: React.FC = () => {
 
             <OTPModal
                 isOpen={showOTP}
-                onClose={() => setShowOTP(false)}
+                onClose={() => {
+                    setShowOTP(false);
+                    setCurrentOTPCode('');
+                }}
                 onVerify={handleOTPVerify}
                 onResend={handleOTPResend}
+                otpCode={currentOTPCode}
             />
 
             <TermsModal

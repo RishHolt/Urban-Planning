@@ -51,7 +51,7 @@ const LocationViewer: React.FC<LocationViewerProps> = ({
   height = '300px',
   showPopup = true,
   popupContent,
-  zoom = 15,
+  zoom = 17,
   showZones = true,
   projectType,
   onZoneValidation
@@ -214,13 +214,13 @@ const LocationViewer: React.FC<LocationViewerProps> = ({
 
   return (
     <div 
-      className="border border-gray-300 rounded-lg overflow-hidden"
+      className="border border-gray-300 rounded-lg overflow-hidden relative z-0"
       style={{ height }}
     >
       <MapContainer
         center={position}
         zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
         scrollWheelZoom={true}
       >
         <TileLayer

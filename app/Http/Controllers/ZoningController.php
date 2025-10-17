@@ -25,6 +25,16 @@ class ZoningController extends Controller
             ->map(function ($zone) {
                 // Convert coordinates array to GeoJSON format
                 $coordinates = $zone->coordinates;
+                
+                \Log::info('Retrieved zone coordinates:', [
+                    'zone_id' => $zone->id,
+                    'zone_name' => $zone->name,
+                    'coordinates' => $coordinates,
+                    'type' => gettype($coordinates),
+                    'is_array' => is_array($coordinates),
+                    'count' => is_array($coordinates) ? count($coordinates) : 'N/A'
+                ]);
+                
                 if (is_array($coordinates) && count($coordinates) > 0 && isset($coordinates[0])) {
                     // Ensure the polygon is closed (first and last coordinates are the same)
                     if ($coordinates[0] !== end($coordinates)) {
@@ -58,12 +68,14 @@ class ZoningController extends Controller
                 return [
                     'id' => $zone->id,
                     'name' => $zone->name,
-                    'typeId' => $zone->zoneType->id,
+                    'type' => $zone->zoneType->name ?? 'Unknown',
+                    'zone_type' => $zone->zoneType,
                     'color' => $zone->color,
-                    'coordinates' => $geoJson,
+                    'coordinates' => $coordinates, // Return raw coordinates array instead of GeoJSON
                     'area' => $zone->area,
                     'cityId' => $zone->city_id,
-                    'description' => $zone->description
+                    'description' => $zone->description,
+                    'regulations' => $zone->regulations ?? []
                 ];
             });
         
@@ -85,12 +97,70 @@ class ZoningController extends Controller
             'description' => 'nullable|string|max:1000'
         ]);
 
-        // Extract coordinates from GeoJSON format
+        // Extract coordinates from request
         $coordinates = $request->coordinates;
+        
+        // Debug: Log the received coordinates
+        \Log::info('Received coordinates:', [
+            'raw' => $coordinates,
+            'type' => gettype($coordinates),
+            'is_array' => is_array($coordinates),
+            'count' => is_array($coordinates) ? count($coordinates) : 'N/A'
+        ]);
+        
+        // Handle different coordinate formats
         if (isset($coordinates['geometry']['coordinates'][0])) {
-            // Extract the polygon coordinates from GeoJSON
-            $coordinates = $coordinates['geometry']['coordinates'][0];
+            // Check if it's a Point geometry (single coordinate pair)
+            if ($coordinates['geometry']['type'] === 'Point') {
+                // Convert Point to a small square polygon
+                $point = $coordinates['geometry']['coordinates'];
+                $lng = $point[0];
+                $lat = $point[1];
+                $offset = 0.0001; // Small offset to create a tiny square
+                $coordinates = [
+                    [$lng - $offset, $lat - $offset],
+                    [$lng + $offset, $lat - $offset],
+                    [$lng + $offset, $lat + $offset],
+                    [$lng - $offset, $lat + $offset],
+                    [$lng - $offset, $lat - $offset] // Close the polygon
+                ];
+                \Log::info('Converted Point to Polygon');
+            } else {
+                // Full GeoJSON Feature format (Polygon)
+                $coordinates = $coordinates['geometry']['coordinates'][0];
+                \Log::info('Extracted from geometry.coordinates[0]');
+            }
+        } elseif (isset($coordinates['coordinates'][0])) {
+            // Direct Polygon format
+            $coordinates = $coordinates['coordinates'][0];
+            \Log::info('Extracted from coordinates[0]');
+        } elseif (is_array($coordinates) && count($coordinates) > 0 && is_array($coordinates[0])) {
+            // Already in coordinate array format
+            $coordinates = $coordinates;
+            \Log::info('Using coordinates as-is');
+        } else {
+            // Fallback: try to extract from any nested structure
+            $coordinates = $this->extractCoordinatesFromNested($coordinates);
+            \Log::info('Extracted using fallback method');
         }
+        
+        // Validate that we have valid coordinates
+        if (!is_array($coordinates) || count($coordinates) < 3) {
+            \Log::error('Invalid coordinates after extraction:', [
+                'coordinates' => $coordinates,
+                'is_array' => is_array($coordinates),
+                'count' => is_array($coordinates) ? count($coordinates) : 'N/A'
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid coordinates format. Expected polygon coordinates array.'
+            ], 422);
+        }
+
+        \Log::info('Final coordinates to store:', [
+            'coordinates' => $coordinates,
+            'count' => count($coordinates)
+        ]);
 
         $zone = Zone::create([
             'name' => $request->name,
@@ -132,9 +202,81 @@ class ZoningController extends Controller
             'description' => 'nullable|string|max:1000'
         ]);
 
-        $updateData = $request->only(['name', 'color', 'coordinates', 'area', 'description']);
+        $updateData = $request->only(['name', 'color', 'area', 'description']);
         if ($request->has('typeId')) {
             $updateData['zone_type_id'] = $request->typeId;
+        }
+
+        // Handle coordinates extraction if coordinates are being updated
+        if ($request->has('coordinates')) {
+            $coordinates = $request->coordinates;
+            
+            // Debug: Log the received coordinates for update
+            \Log::info('Received coordinates for update:', [
+                'zone_id' => $id,
+                'raw' => $coordinates,
+                'type' => gettype($coordinates),
+                'is_array' => is_array($coordinates),
+                'count' => is_array($coordinates) ? count($coordinates) : 'N/A'
+            ]);
+            
+            // Handle different coordinate formats (same logic as store method)
+            if (isset($coordinates['geometry']['coordinates'][0])) {
+                // Check if it's a Point geometry (single coordinate pair)
+                if ($coordinates['geometry']['type'] === 'Point') {
+                    // Convert Point to a small square polygon
+                    $point = $coordinates['geometry']['coordinates'];
+                    $lng = $point[0];
+                    $lat = $point[1];
+                    $offset = 0.0001; // Small offset to create a tiny square
+                    $coordinates = [
+                        [$lng - $offset, $lat - $offset],
+                        [$lng + $offset, $lat - $offset],
+                        [$lng + $offset, $lat + $offset],
+                        [$lng - $offset, $lat + $offset],
+                        [$lng - $offset, $lat - $offset] // Close the polygon
+                    ];
+                    \Log::info('Converted Point to Polygon for update');
+                } else {
+                    // Full GeoJSON Feature format (Polygon)
+                    $coordinates = $coordinates['geometry']['coordinates'][0];
+                    \Log::info('Extracted from geometry.coordinates[0] for update');
+                }
+            } elseif (isset($coordinates['coordinates'][0])) {
+                // Direct Polygon format
+                $coordinates = $coordinates['coordinates'][0];
+                \Log::info('Extracted from coordinates[0] for update');
+            } elseif (is_array($coordinates) && count($coordinates) > 0 && is_array($coordinates[0])) {
+                // Already in coordinate array format
+                $coordinates = $coordinates;
+                \Log::info('Using coordinates as-is for update');
+            } else {
+                // Fallback: try to extract from any nested structure
+                $coordinates = $this->extractCoordinatesFromNested($coordinates);
+                \Log::info('Extracted using fallback method for update');
+            }
+            
+            // Validate that we have valid coordinates
+            if (!is_array($coordinates) || count($coordinates) < 3) {
+                \Log::error('Invalid coordinates after extraction for update:', [
+                    'zone_id' => $id,
+                    'coordinates' => $coordinates,
+                    'is_array' => is_array($coordinates),
+                    'count' => is_array($coordinates) ? count($coordinates) : 'N/A'
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid coordinates format. Expected polygon coordinates array.'
+                ], 422);
+            }
+
+            \Log::info('Final coordinates to update:', [
+                'zone_id' => $id,
+                'coordinates' => $coordinates,
+                'count' => count($coordinates)
+            ]);
+
+            $updateData['coordinates'] = $coordinates;
         }
 
         $zone->update($updateData);
@@ -170,5 +312,41 @@ class ZoningController extends Controller
         Zone::where('city_id', $cityId)->delete();
 
         return response()->json(['message' => "All zones for city {$cityId} have been cleared"]);
+    }
+
+    /**
+     * Extract coordinates from nested array structures
+     */
+    private function extractCoordinatesFromNested($data)
+    {
+        if (!is_array($data)) {
+            return null;
+        }
+
+        // Look for coordinate arrays in common GeoJSON structures
+        $paths = [
+            ['geometry', 'coordinates', 0],
+            ['coordinates', 0],
+            ['coordinates'],
+            ['geometry', 'coordinates'],
+        ];
+
+        foreach ($paths as $path) {
+            $current = $data;
+            foreach ($path as $key) {
+                if (isset($current[$key])) {
+                    $current = $current[$key];
+                } else {
+                    $current = null;
+                    break;
+                }
+            }
+            
+            if (is_array($current) && count($current) > 0 && is_array($current[0])) {
+                return $current;
+            }
+        }
+
+        return null;
     }
 }

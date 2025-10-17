@@ -151,7 +151,7 @@
   }
 
   /* Theme-based utility classes */
-  .bg-primary { background-color: var(--primary) !important; }
+  .bg-primary { background-color: var(--color-primary) !important; }
   .bg-primary-dark { background-color: var(--color-primary-dark) !important; }
   .bg-primary-light { background-color: var(--color-primary-light) !important; }
   .bg-secondary { background-color: var(--color-secondary) !important; }

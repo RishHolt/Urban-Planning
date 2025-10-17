@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Check, Upload, AlertCircle, FileText, Eye, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle as AlertCircleIcon } from 'lucide-react';
-import { Timeline, Input, Select, TextArea, Button, Card, PageHeader, Modal } from '../../../components';
+import { ArrowLeft, Check, Upload, AlertCircle, FileText, Eye, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle as AlertCircleIcon, MapPin } from 'lucide-react';
+import { Timeline, Input, Select, TextArea, Button, Card, PageHeader, Modal, LocationPicker } from '../../../components';
 import { apiService, type User as ApiUser } from '../../../lib/api';
 import Swal from 'sweetalert2';
 
@@ -21,6 +21,10 @@ interface FormData {
   projectLocation: string;
   totalLotAreaSqm: string;
   totalFloorAreaSqm: string;
+  
+  // Section 2.5: Location Coordinates
+  latitude: number | null;
+  longitude: number | null;
 
   // Section 3: Land Ownership
   landOwnership: string;
@@ -43,10 +47,7 @@ interface FormData {
   fireSafetyClearance: File | null;
   additionalNotes: string;
 
-  // Section 5: Payment Information
-  orReferenceNumber: string;
-  orDate: string;
-  paymentStatus: 'pending' | 'confirmed';
+  // Section 5: Payment Information (removed - will be filled after submission)
 
   // Section 6: Declaration
   declarationAccepted: boolean;
@@ -75,6 +76,8 @@ const ZoningClearanceApplication: React.FC = () => {
     projectLocation: '',
     totalLotAreaSqm: '',
     totalFloorAreaSqm: '',
+    latitude: null,
+    longitude: null,
     landOwnership: '',
     nameOfOwner: '',
     tctNo: '',
@@ -92,9 +95,6 @@ const ZoningClearanceApplication: React.FC = () => {
     businessPermit: null,
     fireSafetyClearance: null,
     additionalNotes: '',
-    orReferenceNumber: '',
-    orDate: '',
-    paymentStatus: 'pending',
     declarationAccepted: false,
     signatureFile: null
   });
@@ -102,10 +102,11 @@ const ZoningClearanceApplication: React.FC = () => {
   const timelineSteps = [
     { id: 1, title: 'Personal Information', description: 'Basic applicant details' },
     { id: 2, title: 'Project Details', description: 'Project specifications' },
-    { id: 3, title: 'Land Ownership', description: 'Property documentation' },
-    { id: 4, title: 'Technical Documents', description: 'Supporting files' },
-    { id: 5, title: 'Payment Information', description: 'OR reference & fee details' },
-    { id: 6, title: 'Declaration', description: 'Agreement & signature' }
+    { id: 3, title: 'Project Location', description: 'Map location selection' },
+    { id: 4, title: 'Land Ownership', description: 'Property documentation' },
+    { id: 5, title: 'Technical Documents', description: 'Supporting files' },
+    { id: 6, title: 'Payment Information', description: 'OR reference & fee details' },
+    { id: 7, title: 'Declaration', description: 'Agreement & signature' }
   ];
 
   // Auto-fill user data on component mount
@@ -114,30 +115,64 @@ const ZoningClearanceApplication: React.FC = () => {
       try {
         const localUser = JSON.parse(localStorage.getItem('user') || '{}');
         
-        if (localUser && localUser.id) {
-          try {
-            const response = await apiService.getCurrentUser();
-            if (response.success && response.user) {
-              setUserData(response.user);
-              setFormData(prev => ({
-                ...prev,
-                firstName: response.user?.first_name || '',
-                lastName: response.user?.last_name || '',
-                email: response.user?.email || ''
-              }));
-            } else {
-              localStorage.removeItem('user');
-              setUserData(null);
-            }
-          } catch (error) {
+        if (!localUser || !localUser.id) {
+          // Not logged in - redirect to login
+          Swal.fire({
+            title: 'Login Required',
+            text: 'Please log in to submit a zoning clearance application.',
+            icon: 'warning',
+            confirmButtonText: 'Go to Login'
+          }).then(() => {
+            router.visit('/');
+          });
+          return;
+        }
+        
+        // User is logged in - fetch and auto-fill details
+        try {
+          const response = await apiService.getCurrentUser();
+          if (response.success && response.user) {
+            setUserData(response.user);
+            // Auto-fill user details from profile
+            setFormData(prev => ({
+              ...prev,
+              firstName: response.user?.first_name || '',
+              lastName: response.user?.last_name || '',
+              email: response.user?.email || '',
+              address: response.user?.address || '',
+              contactNumber: response.user?.phone || ''
+            }));
+          } else {
             localStorage.removeItem('user');
-            setUserData(null);
+            Swal.fire({
+              title: 'Session Expired',
+              text: 'Please log in again to continue.',
+              icon: 'warning',
+              confirmButtonText: 'Go to Login'
+            }).then(() => {
+              router.visit('/');
+            });
           }
-        } else {
-          setUserData(null);
+        } catch (error) {
+          localStorage.removeItem('user');
+          Swal.fire({
+            title: 'Authentication Error',
+            text: 'Please log in again to continue.',
+            icon: 'error',
+            confirmButtonText: 'Go to Login'
+          }).then(() => {
+            router.visit('/');
+          });
         }
       } catch (error) {
-        setUserData(null);
+        Swal.fire({
+          title: 'Error',
+          text: 'An error occurred. Please try again.',
+          icon: 'error',
+          confirmButtonText: 'Go to Login'
+        }).then(() => {
+          router.visit('/');
+        });
       }
     };
 
@@ -188,6 +223,27 @@ const ZoningClearanceApplication: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: file }));
   };
 
+  // Helper function to convert camelCase to snake_case
+  const toSnakeCase = (str: string): string => {
+    return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+  };
+
+  // Calculate application fees
+  const calculateFees = () => {
+    const floorArea = parseFloat(formData.totalFloorAreaSqm) || 0;
+    const applicationFee = 250;
+    const baseFee = 400;
+    const processingFee = floorArea * 3;
+    const totalFee = applicationFee + baseFee + processingFee;
+
+    return {
+      application_fee: applicationFee,
+      base_fee: baseFee,
+      processing_fee: processingFee,
+      total_fee: totalFee
+    };
+  };
+
   const validateCurrentStep = (): boolean => {
     // Disabled for testing - always return true
     return true;
@@ -219,7 +275,7 @@ const ZoningClearanceApplication: React.FC = () => {
       if (!completedSteps.includes(currentStep)) {
         setCompletedSteps(prev => [...prev, currentStep]);
       }
-      setCurrentStep(prev => Math.min(prev + 1, 5));
+      setCurrentStep(prev => Math.min(prev + 1, 7));
     }
   };
 
@@ -234,16 +290,28 @@ const ZoningClearanceApplication: React.FC = () => {
     try {
       const formDataToSend = new FormData();
       
-      // Add all form fields
+      // Calculate fees
+      const fees = calculateFees();
+      
+      // Transform and add all form fields
       Object.entries(formData).forEach(([key, value]) => {
+        // Convert camelCase to snake_case
+        const snakeKey = toSnakeCase(key);
+        
         if (value instanceof File) {
-          formDataToSend.append(key, value);
+          formDataToSend.append(snakeKey, value);
         } else if (typeof value === 'boolean') {
-          formDataToSend.append(key, value.toString());
-        } else {
-          formDataToSend.append(key, value);
+          formDataToSend.append(snakeKey, value.toString());
+        } else if (value !== null && value !== undefined) {
+          formDataToSend.append(snakeKey, value.toString());
         }
       });
+
+      // Add calculated fees
+      formDataToSend.append('application_fee', fees.application_fee.toString());
+      formDataToSend.append('base_fee', fees.base_fee.toString());
+      formDataToSend.append('processing_fee', fees.processing_fee.toString());
+      formDataToSend.append('total_fee', fees.total_fee.toString());
 
       const response = await fetch('/api/zoning-clearance/applications', {
         method: 'POST',
@@ -254,21 +322,50 @@ const ZoningClearanceApplication: React.FC = () => {
       });
 
       if (response.ok) {
-        // Success - show success message and redirect to My Applications
+        const result = await response.json();
+        // Show success message with application number and payment instructions
         Swal.fire({
-          title: 'Application Submitted!',
-          text: 'Your zoning clearance application has been submitted successfully.',
+          title: 'Application Submitted Successfully!',
+          html: `
+            <div class="text-left">
+              <p class="mb-2"><strong>Application Number:</strong> ${result.data.application_number}</p>
+              <p class="mb-2"><strong>Total Fee:</strong> ₱${parseFloat(result.data.total_fee).toFixed(2)}</p>
+              <hr class="my-3"/>
+              <p class="font-semibold mb-2">Next Steps:</p>
+              <ol class="list-decimal list-inside text-sm space-y-1">
+                <li>Proceed to the Municipal Treasury Office</li>
+                <li>Pay the total fee of ₱${parseFloat(result.data.total_fee).toFixed(2)}</li>
+                <li>Present your application number: <strong>${result.data.application_number}</strong></li>
+                <li>Receive your Official Receipt (OR)</li>
+                <li>Wait for email notification on application status</li>
+              </ol>
+            </div>
+          `,
           icon: 'success',
-          confirmButtonText: 'View My Applications'
+          confirmButtonText: 'View My Applications',
+          allowOutsideClick: false,
+          width: '600px'
         }).then(() => {
           router.visit('/my-applications');
         });
       } else {
         const error = await response.json();
         console.error('Submission error:', error);
+        Swal.fire({
+          title: 'Submission Failed',
+          text: error.message || 'Failed to submit application. Please try again.',
+          icon: 'error',
+          confirmButtonText: 'OK'
+        });
       }
     } catch (error) {
       console.error('Submission error:', error);
+      Swal.fire({
+        title: 'Error',
+        text: 'An unexpected error occurred. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -408,6 +505,56 @@ const ZoningClearanceApplication: React.FC = () => {
       case 3:
         return (
           <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Project Location on Map</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please mark the exact location of your project on the map. This will help us verify zoning compliance for your area.
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start">
+                <MapPin className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-800">How to use the map:</h4>
+                  <ul className="text-sm text-blue-700 mt-1 list-disc list-inside">
+                    <li>Search for your location using the search box</li>
+                    <li>Click on the map to place a marker at your project location</li>
+                    <li>Drag the marker to adjust the exact position</li>
+                    <li>The map will show zoning information for the selected area</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <LocationPicker
+              initialLat={formData.latitude || 14.6507}
+              initialLng={formData.longitude || 120.9632}
+              onLocationSelect={(lat, lng) => {
+                setFormData(prev => ({ ...prev, latitude: lat, longitude: lng }));
+              }}
+              height="500px"
+              showZones={true}
+              searchPlaceholder="Search for your project location..."
+            />
+
+            {formData.latitude && formData.longitude && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">Location Selected</p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Coordinates: {formData.latitude.toFixed(6)}, {formData.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Land Ownership & Documentation</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Select
@@ -511,7 +658,7 @@ const ZoningClearanceApplication: React.FC = () => {
           </div>
         );
 
-      case 4:
+      case 5:
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Technical & Supporting Documents</h3>
@@ -552,7 +699,7 @@ const ZoningClearanceApplication: React.FC = () => {
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Payment Information</h3>
@@ -582,44 +729,15 @@ const ZoningClearanceApplication: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input
-                label="OR (Official Receipt) Reference Number *"
-                value={formData.orReferenceNumber}
-                onChange={(e) => handleInputChange('orReferenceNumber', e.target.value)}
-                placeholder="Enter OR reference number"
-                required
-              />
-              <Input
-                label="OR Date *"
-                type="date"
-                value={formData.orDate}
-                onChange={(e) => handleInputChange('orDate', e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="mt-4">
-              <Select
-                label="Payment Status *"
-                value={formData.paymentStatus}
-                onChange={(value) => handleInputChange('paymentStatus', value as string)}
-                options={[
-                  { value: 'pending', label: 'Payment Pending - Will be verified by treasury' },
-                  { value: 'confirmed', label: 'Payment Confirmed - Already verified by treasury' }
-                ]}
-                required
-              />
-            </div>
-            
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
                 <div>
-                  <h4 className="text-sm font-semibold text-yellow-800">Payment Instructions</h4>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Please pay the total fee at the Municipal Treasury Office and provide the OR reference number and date above. 
-                    Keep your official receipt as proof of payment.
+                  <h4 className="text-sm font-semibold text-blue-800">Payment Instructions</h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    After submitting your application, you will receive a payment reference number. 
+                    Please proceed to the Municipal Treasury Office to pay the total fee shown above. 
+                    Keep your official receipt as proof of payment for future reference.
                   </p>
                 </div>
               </div>
@@ -627,7 +745,7 @@ const ZoningClearanceApplication: React.FC = () => {
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Declaration & Agreement</h3>
@@ -728,7 +846,7 @@ const ZoningClearanceApplication: React.FC = () => {
               Previous
             </Button>
 
-            {currentStep < 6 ? (
+            {currentStep < 7 ? (
               <Button
                 variant="primary"
                 onClick={nextStep}

@@ -15,14 +15,17 @@ import {
   User,
   MapPin,
   DollarSign,
-  FileText
+  FileText,
+  Building2
 } from 'lucide-react';
 import { Button, Card, Badge, Input, Select } from '../../../components';
+import Header from '../../../components/Header';
+import AppLayout from '../../../layouts/AppLayout';
 
 interface ZoningApplication {
   id: number;
   application_number: string;
-  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_changes';
+  status: 'pending' | 'initial_review' | 'technical_review' | 'awaiting_approval' | 'approved' | 'rejected' | 'requires_changes';
   created_at: string;
   reviewed_at?: string;
   assigned_staff?: {
@@ -30,6 +33,13 @@ interface ZoningApplication {
     name: string;
     role: string;
   };
+  technical_staff?: {
+    id: string;
+    name: string;
+    role: string;
+  };
+  forwarded_to_technical_at?: string;
+  returned_from_technical_at?: string;
   
   // Personal Information
   first_name: string;
@@ -75,7 +85,7 @@ interface ZoningApplication {
   additional_notes?: string;
 }
 
-const ZoningApplicationsTable: React.FC = () => {
+const ZoningApplicationsTable = () => {
   const [applications, setApplications] = useState<ZoningApplication[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<ZoningApplication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +100,17 @@ const ZoningApplicationsTable: React.FC = () => {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (statusFilter !== 'all') params.append('status', statusFilter);
+      
+      // Handle special filter cases
+      if (statusFilter === 'unpaid') {
+        params.append('payment_status', 'pending');
+      } else if (statusFilter === 'pending_document_review') {
+        params.append('status', 'initial_review');
+        params.append('has_pending_documents', 'true');
+      } else if (statusFilter !== 'all') {
+        params.append('status', statusFilter);
+      }
+      
       if (paymentFilter !== 'all') params.append('payment_status', paymentFilter);
       if (searchQuery) params.append('search', searchQuery);
 
@@ -129,7 +149,9 @@ const ZoningApplicationsTable: React.FC = () => {
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'pending': return 'warning';
-      case 'under_review': return 'info';
+      case 'initial_review': return 'info';
+      case 'technical_review': return 'info';
+      case 'awaiting_approval': return 'info';
       case 'approved': return 'success';
       case 'rejected': return 'danger';
       case 'requires_changes': return 'warning';
@@ -140,7 +162,9 @@ const ZoningApplicationsTable: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
-      case 'under_review': return <AlertCircle className="w-4 h-4" />;
+      case 'initial_review': return <AlertCircle className="w-4 h-4" />;
+      case 'technical_review': return <Building2 className="w-4 h-4" />;
+      case 'awaiting_approval': return <CheckCircle className="w-4 h-4" />;
       case 'approved': return <CheckCircle className="w-4 h-4" />;
       case 'rejected': return <XCircle className="w-4 h-4" />;
       case 'requires_changes': return <AlertCircle className="w-4 h-4" />;
@@ -290,6 +314,24 @@ const ZoningApplicationsTable: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex-shrink-0 mb-4 pb-2">
+        <div className="flex justify-between items-start">
+          <Header 
+            variant="secondary"
+            title="Zoning Applications"
+            subtext="Manage and review zoning clearance applications."
+          />
+          
+          {/* Controls next to header */}
+          <div className="flex items-center gap-3">
+            <Button variant="outlined" icon={<Download size={16} />}>
+              Export
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Filters and Search */}
       <Card className="p-4">
         <div className="flex flex-col lg:flex-row gap-4">
@@ -306,8 +348,12 @@ const ZoningApplicationsTable: React.FC = () => {
               onChange={(value) => setStatusFilter(value as string)}
               options={[
                 { value: 'all', label: 'All Status' },
+                { value: 'unpaid', label: 'Unpaid' },
+                { value: 'pending_document_review', label: 'Pending Document Review' },
                 { value: 'pending', label: 'Pending' },
-                { value: 'under_review', label: 'Under Review' },
+                { value: 'initial_review', label: 'Initial Review' },
+                { value: 'technical_review', label: 'Technical Review' },
+                { value: 'awaiting_approval', label: 'Awaiting Approval' },
                 { value: 'approved', label: 'Approved' },
                 { value: 'rejected', label: 'Rejected' },
                 { value: 'requires_changes', label: 'Requires Changes' }
@@ -399,5 +445,8 @@ const ZoningApplicationsTable: React.FC = () => {
     </div>
   );
 };
+
+// Add default layout for persistent sidebar/topnav
+(ZoningApplicationsTable as any).layout = (page: React.ReactNode) => <AppLayout>{page}</AppLayout>;
 
 export default ZoningApplicationsTable;

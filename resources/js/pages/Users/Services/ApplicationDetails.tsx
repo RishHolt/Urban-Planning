@@ -1,20 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { ArrowLeft, Calendar, User, FileText, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { Button, Card, PageHeader, Badge } from '../../../components';
+import { ArrowLeft, Calendar, User, FileText, Clock, CheckCircle, XCircle, AlertCircle, MapPin, Upload, Download, Eye } from 'lucide-react';
+import { Button, Card, PageHeader, Badge, LocationViewer, Input, TextArea, Modal } from '../../../components';
 import { apiService, type User as ApiUser } from '../../../lib/api';
+import Swal from 'sweetalert2';
+
+interface Document {
+  id: string;
+  documentType: string;
+  fileName: string;
+  filePath: string;
+  fileUrl: string;
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+  reviewedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  reviewedAt?: string;
+  reviewRemarks?: string;
+  documentCategory: 'initial_review' | 'technical_review';
+  uploadedAt: string;
+}
+
+interface ApplicationHistory {
+  id: string;
+  action: string;
+  oldValue?: string;
+  newValue?: string;
+  remarks?: string;
+  performedBy?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  createdAt: string;
+}
 
 interface Application {
   id: string;
   applicationNumber: string;
-  status: 'pending' | 'under_review' | 'approved' | 'rejected' | 'requires_changes';
+  status: 'pending' | 'initial_review' | 'technical_review' | 'awaiting_approval' | 'approved' | 'rejected' | 'requires_changes';
   submittedAt: string;
   reviewedAt?: string;
   assignedStaff?: {
     id: string;
-    name: string;
-    role: string;
+    firstName: string;
+    lastName: string;
   };
+  technicalStaff?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+  };
+  forwardedToTechnicalAt?: string;
+  returnedFromTechnicalAt?: string;
   
   // Section 1: Personal Information
   firstName: string;
@@ -31,6 +71,10 @@ interface Application {
   projectLocation: string;
   totalLotAreaSqm: string;
   totalFloorAreaSqm: string;
+  
+  // Location
+  latitude?: string;
+  longitude?: string;
 
   // Section 3: Land Ownership
   landOwnership: string;
@@ -40,17 +84,9 @@ interface Application {
   lotBlockSurveyNo: string;
   barangayClearanceId: string;
 
-  // Section 4: Technical Documents Status
-  documentsSubmitted: {
-    siteDevelopmentPlan: boolean;
-    vicinityMap: boolean;
-    buildingPlan: boolean;
-    environmentalClearance: boolean;
-    dpwhClearance: boolean;
-    subdivisionPermit: boolean;
-    businessPermit: boolean;
-    fireSafetyClearance: boolean;
-  };
+  // Documents
+  documents: Document[];
+
   additionalNotes: string;
 
   // Section 5: Payment Information
@@ -68,12 +104,19 @@ interface Application {
     processingFee: number;
     total: number;
   };
+
+  // History
+  history: ApplicationHistory[];
 }
 
 const ApplicationDetails: React.FC = () => {
   const [application, setApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<ApiUser | null>(null);
+  const [showReuploadModal, setShowReuploadModal] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [reuploadFile, setReuploadFile] = useState<File | null>(null);
+  const [reuploading, setReuploading] = useState(false);
 
   // Get user data on component mount
   useEffect(() => {
@@ -114,209 +157,113 @@ const ApplicationDetails: React.FC = () => {
         const pathParts = window.location.pathname.split('/');
         const applicationId = pathParts[pathParts.length - 1];
         
-        // Mock data for now - replace with actual API call
-        const mockApplications: Application[] = [
-          {
-            id: '1',
-            applicationNumber: 'ZC-2024-001',
-            status: 'under_review',
-            submittedAt: '2024-01-15T10:30:00Z',
-            reviewedAt: '2024-01-16T14:20:00Z',
-            assignedStaff: {
-              id: 'staff1',
-              name: 'John Smith',
-              role: 'Zoning Officer'
-            },
-            
-            // Personal Information
-            firstName: 'Juan',
-            lastName: 'Dela Cruz',
-            address: '123 Main Street, Barangay 1, Caloocan City',
-            contactNumber: '+63 912 345 6789',
-            businessName: 'Dela Cruz Construction Corp.',
-            email: 'juan.delacruz@email.com',
-            typeOfApplicant: 'Corporation',
-
-            // Project Details
-            projectDescription: 'Construction of 3-story residential building with 6 units for family housing',
-            projectType: 'Residential',
-            projectLocation: '123 Main Street, Barangay 1, Caloocan City',
-            totalLotAreaSqm: '200',
-            totalFloorAreaSqm: '150',
-
-            // Land Ownership
-            landOwnership: 'Owned',
-            nameOfOwner: 'Juan Dela Cruz',
-            tctNo: 'TCT-123456',
-            taxDeclarationNo: 'TD-789012',
-            lotBlockSurveyNo: 'Lot 1, Block 2, Survey No. 345',
-            barangayClearanceId: 'BC-2024-001',
-
-            // Technical Documents Status
-            documentsSubmitted: {
-              siteDevelopmentPlan: true,
-              vicinityMap: true,
-              buildingPlan: true,
-              environmentalClearance: false,
-              dpwhClearance: false,
-              subdivisionPermit: false,
-              businessPermit: true,
-              fireSafetyClearance: true
-            },
-            additionalNotes: 'Project includes parking area and garden space',
-
-            // Payment Information
-            orReferenceNumber: 'OR-2024-001234',
-            orDate: '2024-01-15',
-            paymentStatus: 'confirmed',
-
-            // Declaration
-            declarationAccepted: true, // All applications must have accepted declaration
-
-            // Fees
-            fees: {
-              applicationFee: 250,
-              baseFee: 400,
-              processingFee: 450,
-              total: 1100
-            }
-          },
-          {
-            id: '2',
-            applicationNumber: 'ZC-2024-002',
-            status: 'approved',
-            submittedAt: '2024-01-10T09:15:00Z',
-            reviewedAt: '2024-01-12T16:45:00Z',
-            assignedStaff: {
-              id: 'staff2',
-              name: 'Maria Garcia',
-              role: 'Senior Zoning Officer'
-            },
-            
-            // Personal Information
-            firstName: 'Maria',
-            lastName: 'Santos',
-            address: '456 Business Ave, Barangay 2, Caloocan City',
-            contactNumber: '+63 917 234 5678',
-            businessName: 'Santos Enterprises Inc.',
-            email: 'maria.santos@email.com',
-            typeOfApplicant: 'Corporation',
-
-            // Project Details
-            projectDescription: 'Commercial office building development with retail spaces on ground floor',
-            projectType: 'Commercial',
-            projectLocation: '456 Business Ave, Barangay 2, Caloocan City',
-            totalLotAreaSqm: '500',
-            totalFloorAreaSqm: '300',
-
-            // Land Ownership
-            landOwnership: 'Leased',
-            nameOfOwner: 'ABC Property Management',
-            tctNo: 'TCT-234567',
-            taxDeclarationNo: 'TD-890123',
-            lotBlockSurveyNo: 'Lot 3, Block 1, Survey No. 456',
-            barangayClearanceId: 'BC-2024-002',
-
-            // Technical Documents Status
-            documentsSubmitted: {
-              siteDevelopmentPlan: true,
-              vicinityMap: true,
-              buildingPlan: true,
-              environmentalClearance: true,
-              dpwhClearance: true,
-              subdivisionPermit: false,
-              businessPermit: true,
-              fireSafetyClearance: true
-            },
-            additionalNotes: 'Includes 20 parking slots and elevator access',
-
-            // Payment Information
-            orReferenceNumber: 'OR-2024-001235',
-            orDate: '2024-01-16',
-            paymentStatus: 'confirmed',
-
-            // Declaration
-            declarationAccepted: true, // All applications must have accepted declaration
-
-            // Fees
-            fees: {
-              applicationFee: 250,
-              baseFee: 400,
-              processingFee: 900,
-              total: 1550
-            }
-          },
-          {
-            id: '3',
-            applicationNumber: 'ZC-2024-003',
-            status: 'requires_changes',
-            submittedAt: '2024-01-20T11:00:00Z',
-            reviewedAt: '2024-01-22T10:30:00Z',
-            assignedStaff: {
-              id: 'staff3',
-              name: 'Robert Johnson',
-              role: 'Zoning Inspector'
-            },
-            
-            // Personal Information
-            firstName: 'Robert',
-            lastName: 'Johnson',
-            address: '789 Industrial Blvd, Barangay 3, Caloocan City',
-            contactNumber: '+63 918 345 6789',
-            businessName: 'Johnson Logistics Corp.',
-            email: 'robert.johnson@email.com',
-            typeOfApplicant: 'Corporation',
-
-            // Project Details
-            projectDescription: 'Warehouse construction for logistics and distribution center',
-            projectType: 'Industrial',
-            projectLocation: '789 Industrial Blvd, Barangay 3, Caloocan City',
-            totalLotAreaSqm: '1000',
-            totalFloorAreaSqm: '500',
-
-            // Land Ownership
-            landOwnership: 'Owned',
-            nameOfOwner: 'Robert Johnson',
-            tctNo: 'TCT-345678',
-            taxDeclarationNo: 'TD-901234',
-            lotBlockSurveyNo: 'Lot 5, Block 4, Survey No. 567',
-            barangayClearanceId: 'BC-2024-003',
-
-            // Technical Documents Status
-            documentsSubmitted: {
-              siteDevelopmentPlan: true,
-              vicinityMap: true,
-              buildingPlan: false,
-              environmentalClearance: true,
-              dpwhClearance: false,
-              subdivisionPermit: false,
-              businessPermit: true,
-              fireSafetyClearance: false
-            },
-            additionalNotes: 'Requires additional fire safety measures due to industrial nature',
-
-            // Payment Information
-            orReferenceNumber: 'OR-2024-001236',
-            orDate: '2024-01-17',
-            paymentStatus: 'pending',
-
-            // Declaration
-            declarationAccepted: true, // All applications must have accepted declaration
-
-            // Fees
-            fees: {
-              applicationFee: 250,
-              baseFee: 400,
-              processingFee: 1500,
-              total: 2150
-            }
+        // Fetch from API
+        const response = await fetch(`/api/zoning/applications/${applicationId}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
           }
-        ];
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch application');
+        }
+
+        const result = await response.json();
         
-        const foundApplication = mockApplications.find(app => app.id === applicationId);
-        setApplication(foundApplication || null);
+        if (result.success && result.data) {
+          const app = result.data;
+          
+          // Transform snake_case to camelCase
+          const transformedApp: Application = {
+            id: app.id?.toString(),
+            applicationNumber: app.application_number,
+            status: app.status,
+            submittedAt: app.created_at,
+            reviewedAt: app.reviewed_at,
+            assignedStaff: app.assigned_staff,
+            technicalStaff: app.technical_staff,
+            forwardedToTechnicalAt: app.forwarded_to_technical_at,
+            returnedFromTechnicalAt: app.returned_from_technical_at,
+            
+            // Personal Information
+            firstName: app.first_name,
+            lastName: app.last_name,
+            address: app.address,
+            contactNumber: app.contact_number,
+            businessName: app.business_name,
+            email: app.email,
+            typeOfApplicant: app.type_of_applicant,
+
+            // Project Details
+            projectDescription: app.project_description,
+            projectType: app.project_type,
+            projectLocation: app.project_location,
+            totalLotAreaSqm: app.total_lot_area_sqm,
+            totalFloorAreaSqm: app.total_floor_area_sqm,
+            latitude: app.latitude,
+            longitude: app.longitude,
+
+            // Land Ownership
+            landOwnership: app.land_ownership,
+            nameOfOwner: app.name_of_owner,
+            tctNo: app.tct_no,
+            taxDeclarationNo: app.tax_declaration_no,
+            lotBlockSurveyNo: app.lot_block_survey_no,
+            barangayClearanceId: app.barangay_clearance_id,
+
+            // Documents
+            documents: app.documents?.map((doc: any) => ({
+              id: doc.id?.toString(),
+              documentType: doc.document_type,
+              fileName: doc.file_name,
+              filePath: doc.file_path,
+              fileUrl: doc.file_url,
+              verificationStatus: doc.verification_status,
+              reviewedBy: doc.reviewed_by,
+              reviewedAt: doc.reviewed_at,
+              reviewRemarks: doc.review_remarks,
+              documentCategory: doc.document_category,
+              uploadedAt: doc.created_at
+            })) || [],
+
+            additionalNotes: app.additional_notes,
+
+            // Payment Information
+            orReferenceNumber: app.or_reference_number,
+            orDate: app.or_date,
+            paymentStatus: app.payment_status,
+
+            // Declaration
+            declarationAccepted: true,
+
+            // Fees
+            fees: {
+              applicationFee: parseFloat(app.application_fee || '0'),
+              baseFee: parseFloat(app.base_fee || '0'),
+              processingFee: parseFloat(app.processing_fee || '0'),
+              total: parseFloat(app.total_fee || '0')
+            },
+
+            // History
+            history: app.history?.map((h: any) => ({
+              id: h.id?.toString(),
+              action: h.action,
+              oldValue: h.old_value,
+              newValue: h.new_value,
+              remarks: h.remarks,
+              performedBy: h.performed_by,
+              createdAt: h.created_at
+            })) || []
+          };
+
+          setApplication(transformedApp);
+        } else {
+          setApplication(null);
+        }
       } catch (error) {
         console.error('Error loading application:', error);
+        setApplication(null);
       } finally {
         setLoading(false);
       }
@@ -333,10 +280,70 @@ const ApplicationDetails: React.FC = () => {
     console.log('Logout completed');
   };
 
+  const handleReuploadDocument = (documentId: string) => {
+    setSelectedDocumentId(documentId);
+    setShowReuploadModal(true);
+  };
+
+  const handleReuploadSubmit = async () => {
+    if (!reuploadFile || !selectedDocumentId || !application) {
+      return;
+    }
+
+    setReuploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('document', reuploadFile);
+
+      const response = await fetch(`/api/zoning/applications/${application.id}/documents/${selectedDocumentId}/reupload`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to re-upload document');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        Swal.fire({
+          title: 'Success!',
+          text: 'Document re-uploaded successfully',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+        
+        // Reload application data
+        window.location.reload();
+      } else {
+        throw new Error(result.message || 'Failed to re-upload document');
+      }
+    } catch (error) {
+      console.error('Error re-uploading document:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: 'Failed to re-upload document. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    } finally {
+      setReuploading(false);
+      setShowReuploadModal(false);
+      setSelectedDocumentId(null);
+      setReuploadFile(null);
+    }
+  };
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'pending': return 'warning';
-      case 'under_review': return 'info';
+      case 'initial_review': return 'info';
+      case 'technical_review': return 'info';
+      case 'awaiting_approval': return 'info';
       case 'approved': return 'success';
       case 'rejected': return 'danger';
       case 'requires_changes': return 'warning';
@@ -347,7 +354,9 @@ const ApplicationDetails: React.FC = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'pending': return <Clock className="w-4 h-4" />;
-      case 'under_review': return <FileText className="w-4 h-4" />;
+      case 'initial_review': return <FileText className="w-4 h-4" />;
+      case 'technical_review': return <FileText className="w-4 h-4" />;
+      case 'awaiting_approval': return <Clock className="w-4 h-4" />;
       case 'approved': return <CheckCircle className="w-4 h-4" />;
       case 'rejected': return <XCircle className="w-4 h-4" />;
       case 'requires_changes': return <AlertCircle className="w-4 h-4" />;
@@ -505,6 +514,34 @@ const ApplicationDetails: React.FC = () => {
             </Card>
           </div>
 
+          {/* Location Map */}
+          {application.latitude && application.longitude && (
+            <Card className="p-6 mb-6">
+              <div className="flex items-center mb-4">
+                <MapPin className="w-5 h-5 text-gray-600 mr-2" />
+                <h3 className="text-lg font-semibold text-gray-800">Project Location</h3>
+              </div>
+              <LocationViewer
+                latitude={parseFloat(application.latitude)}
+                longitude={parseFloat(application.longitude)}
+                height="400px"
+                showPopup={true}
+                showZones={true}
+                projectType={application.projectType}
+                popupContent={`Project Location: ${application.projectLocation}`}
+              />
+              <div className="mt-3 bg-gray-50 p-3 rounded-md">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium">Coordinates:</span>
+                  <div className="flex gap-4">
+                    <span>Lat: {parseFloat(application.latitude).toFixed(6)}</span>
+                    <span>Lng: {parseFloat(application.longitude).toFixed(6)}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Land Ownership Information */}
           <Card className="p-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Land Ownership Information</h3>
@@ -542,26 +579,109 @@ const ApplicationDetails: React.FC = () => {
             </div>
           </Card>
 
-          {/* Technical Documents Status */}
+          {/* Documents Section */}
           <Card className="p-6 mb-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Technical Documents Status</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(application.documentsSubmitted).map(([key, submitted]) => (
-                <div key={key} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-700 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </span>
-                  <Badge 
-                    variant={submitted ? 'success' : 'warning'}
-                    size="sm"
-                  >
-                    {submitted ? 'Submitted' : 'Pending'}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Submitted Documents</h3>
+            
+            {application.documents.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <p>No documents submitted yet</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {application.documents.map((document) => (
+                  <div key={document.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-gray-600" />
+                        <div>
+                          <h4 className="font-medium text-gray-900 capitalize">
+                            {document.documentType.replace(/_/g, ' ')}
+                          </h4>
+                          <p className="text-sm text-gray-500">{document.fileName}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge 
+                          variant={
+                            document.verificationStatus === 'approved' ? 'success' :
+                            document.verificationStatus === 'rejected' ? 'danger' : 'warning'
+                          }
+                          size="sm"
+                        >
+                          {document.verificationStatus === 'approved' ? 'Approved' :
+                           document.verificationStatus === 'rejected' ? 'Rejected' : 'Pending'}
+                        </Badge>
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(document.fileUrl, '_blank')}
+                            className="p-1"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => window.open(`/api/zoning/applications/${application.id}/documents/${document.id}/download`, '_blank')}
+                            className="p-1"
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {document.verificationStatus === 'rejected' && document.reviewRemarks && (
+                      <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+                        <div className="flex items-start">
+                          <XCircle className="w-4 h-4 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
+                          <div>
+                            <p className="text-sm font-medium text-red-800">Rejection Reason:</p>
+                            <p className="text-sm text-red-700 mt-1">{document.reviewRemarks}</p>
+                            {document.reviewedBy && (
+                              <p className="text-xs text-red-600 mt-1">
+                                Reviewed by: {document.reviewedBy.firstName} {document.reviewedBy.lastName}
+                              </p>
+                            )}
+                            {document.reviewedAt && (
+                              <p className="text-xs text-red-600">
+                                On: {new Date(document.reviewedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <Button
+                            variant="outlined"
+                            size="sm"
+                            onClick={() => handleReuploadDocument(document.id)}
+                            className="text-red-700 border-red-300 hover:bg-red-50"
+                          >
+                            <Upload className="w-4 h-4 mr-1" />
+                            Re-upload Document
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {document.verificationStatus === 'approved' && document.reviewedBy && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        Approved by: {document.reviewedBy.firstName} {document.reviewedBy.lastName}
+                        {document.reviewedAt && (
+                          <span> on {new Date(document.reviewedAt).toLocaleDateString()}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
             {application.additionalNotes && (
-              <div className="mt-4">
+              <div className="mt-6">
                 <label className="text-sm font-medium text-gray-500">Additional Notes</label>
                 <p className="text-gray-900 mt-1 p-3 bg-gray-50 rounded-lg">{application.additionalNotes}</p>
               </div>
@@ -588,8 +708,7 @@ const ApplicationDetails: React.FC = () => {
                 {application.assignedStaff && (
                   <div>
                     <label className="text-sm font-medium text-gray-500">Assigned Staff</label>
-                    <p className="text-gray-900 mt-1">{application.assignedStaff.name}</p>
-                    <p className="text-sm text-gray-500">{application.assignedStaff.role}</p>
+                    <p className="text-gray-900 mt-1">{application.assignedStaff.firstName} {application.assignedStaff.lastName}</p>
                   </div>
                 )}
               </div>
@@ -661,6 +780,89 @@ const ApplicationDetails: React.FC = () => {
               </div>
             )}
           </Card>
+
+          {/* Application History */}
+          {application.history && application.history.length > 0 && (
+            <Card className="p-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Application History</h3>
+              <div className="space-y-4">
+                {application.history.map((historyItem) => (
+                  <div key={historyItem.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Clock className="w-4 h-4 text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-900">
+                          {historyItem.action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(historyItem.createdAt).toLocaleDateString()} {new Date(historyItem.createdAt).toLocaleTimeString()}
+                        </p>
+                      </div>
+                      {historyItem.oldValue && historyItem.newValue && (
+                        <div className="mt-1 text-sm text-gray-600">
+                          <span className="font-medium">Changed from:</span> {historyItem.oldValue} 
+                          <span className="mx-2">→</span>
+                          <span className="font-medium">to:</span> {historyItem.newValue}
+                        </div>
+                      )}
+                      {historyItem.remarks && (
+                        <p className="mt-1 text-sm text-gray-600">{historyItem.remarks}</p>
+                      )}
+                      {historyItem.performedBy && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Performed by: {historyItem.performedBy.firstName} {historyItem.performedBy.lastName}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Re-upload Modal */}
+          <Modal
+            isOpen={showReuploadModal}
+            onClose={() => setShowReuploadModal(false)}
+            title="Re-upload Document"
+          >
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Please select a new file to replace the rejected document.
+              </p>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select File
+                </label>
+                <input
+                  type="file"
+                  onChange={(e) => setReuploadFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outlined"
+                  onClick={() => setShowReuploadModal(false)}
+                  disabled={reuploading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleReuploadSubmit}
+                  disabled={!reuploadFile || reuploading}
+                >
+                  {reuploading ? 'Uploading...' : 'Upload Document'}
+                </Button>
+              </div>
+            </div>
+          </Modal>
         </div>
       </div>
     </div>

@@ -18,13 +18,15 @@ class Zone extends Model
         'city_id',
         'coordinates',
         'area_sqm',
-        'is_active'
+        'is_active',
+        'regulations'
     ];
 
     protected $casts = [
         'coordinates' => 'array',
         'is_active' => 'boolean',
         'area_sqm' => 'decimal:2',
+        'regulations' => 'array',
     ];
 
     /**

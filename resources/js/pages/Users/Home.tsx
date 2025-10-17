@@ -5,7 +5,7 @@ import { router } from '@inertiajs/react';
 import { apiService, type User as ApiUser } from '../../lib/api';
 import { Button, PageHeader } from '../../components';
 import BackgroundImage from '../../assets/Background.png';
-import { ZoningClearanceModal } from './Services';
+import { ZoningClearanceModal, HousingBeneficiaryModal } from './Services';
 
 const Home: React.FC = () => {
     const { appearance, updateAppearance } = useAppearance();
@@ -15,6 +15,7 @@ const Home: React.FC = () => {
     const [chatMessage, setChatMessage] = useState('');
     const [userData, setUserData] = useState<ApiUser | null>(null);
     const [isZoningModalOpen, setIsZoningModalOpen] = useState(false);
+    const [isHousingModalOpen, setIsHousingModalOpen] = useState(false);
     const [chatMessages, setChatMessages] = useState([
         {
             id: 1,
@@ -83,55 +84,28 @@ const Home: React.FC = () => {
             id: 1,
             title: 'Zoning Clearance Application',
             description: 'Apply for zoning clearance for business or building permits',
-            icon: '/images/services/BCID.png',
+            icon: '/images/services/Zoning-Clearance.png',
             color: 'bg-green-100',
             textColor: 'text-green-800',
             borderColor: 'border-green-200'
         },
         {
             id: 2,
-            title: 'Feedback and Grievance Portal',
-            description: 'Submit feedback and report concerns',
-            icon: '/images/services/FGP.png',
+            title: 'Zoning Map',
+            description: 'View and explore the city zoning map',
+            icon: '/images/services/Zoning-Map.png',
             color: 'bg-blue-100',
             textColor: 'text-blue-800',
             borderColor: 'border-blue-200'
         },
         {
             id: 3,
-            title: 'Public Consultation and Survey Tools',
-            description: 'Participate in community surveys and consultations',
-            icon: '/images/services/PCST.png',
+            title: 'Housing Beneficiary',
+            description: 'Apply for housing assistance and socialized housing programs',
+            icon: '/images/services/Housing-Beneficiary.png',
             color: 'bg-purple-100',
             textColor: 'text-purple-800',
             borderColor: 'border-purple-200'
-        },
-        {
-            id: 4,
-            title: 'AICS - Assistance to Individuals in Crisis Situation',
-            description: 'Financial assistance for individuals in crisis',
-            icon: '/images/services/aim.png',
-            color: 'bg-orange-100',
-            textColor: 'text-orange-800',
-            borderColor: 'border-orange-200'
-        },
-        {
-            id: 5,
-            title: 'CCSWDD - Social Welfare Services',
-            description: 'Social welfare and development programs',
-            icon: '/images/services/ccswdd.jpg',
-            color: 'bg-pink-100',
-            textColor: 'text-pink-800',
-            borderColor: 'border-pink-200'
-        },
-        {
-            id: 6,
-            title: 'OSCA/PDAO/Livelihood Programs',
-            description: 'Senior citizen and PWD services, livelihood support',
-            icon: '/images/services/osca.jpg',
-            color: 'bg-indigo-100',
-            textColor: 'text-indigo-800',
-            borderColor: 'border-indigo-200'
         }
     ];
 
@@ -225,6 +199,11 @@ const Home: React.FC = () => {
                                 onClick={() => {
                                     if (service.id === 1) {
                                         setIsZoningModalOpen(true);
+                                    } else if (service.id === 2) {
+                                        // Navigate to public zoning map
+                                        router.visit('/zoning/map');
+                                    } else if (service.id === 3) {
+                                        setIsHousingModalOpen(true);
                                     }
                                 }}
                                 className={`${service.color} ${service.borderColor} border-2 rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out transform`}
@@ -233,7 +212,7 @@ const Home: React.FC = () => {
                                     <img 
                                         src={service.icon} 
                                         alt={service.title}
-                                        className="w-24 h-24 mb-4 object-contain"
+                                        className="w-24 h-24 mb-4 object-contain rounded-full shadow-lg"
                                     />
                                     <h3 className={`text-xl font-bold text-center mb-2 ${service.textColor}`}>
                                         {service.title}
@@ -405,6 +384,12 @@ const Home: React.FC = () => {
             <ZoningClearanceModal
                 isOpen={isZoningModalOpen}
                 onClose={() => setIsZoningModalOpen(false)}
+            />
+
+            {/* Housing Beneficiary Modal */}
+            <HousingBeneficiaryModal
+                isOpen={isHousingModalOpen}
+                onClose={() => setIsHousingModalOpen(false)}
             />
         </div>
     );

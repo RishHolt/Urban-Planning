@@ -159,7 +159,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       >
         <MapContainer
           center={position}
-          zoom={15}
+          zoom={17}
           style={{ height: '100%', width: '100%' }}
           ref={mapRef}
         >

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, RotateCcw } from 'lucide-react';
+import { X, RotateCcw, Copy, Check } from 'lucide-react';
 import { Button } from '../../components';
 
 interface OTPModalProps {
@@ -7,18 +7,21 @@ interface OTPModalProps {
     onClose: () => void;
     onVerify: (otp: string) => Promise<boolean>; // Return boolean to indicate success/failure
     onResend: () => void;
+    otpCode?: string; // The actual OTP code to display
 }
 
 const OTPModal: React.FC<OTPModalProps> = ({
     isOpen,
     onClose,
     onVerify,
-    onResend
+    onResend,
+    otpCode
 }) => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [resendTimer, setResendTimer] = useState(0);
     const [canResend, setCanResend] = useState(true);
     const [error, setError] = useState('');
+    const [copied, setCopied] = useState(false);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
@@ -126,6 +129,18 @@ const OTPModal: React.FC<OTPModalProps> = ({
         inputRefs.current[0]?.focus();
     };
 
+    const handleCopyOTP = async () => {
+        if (otpCode) {
+            try {
+                await navigator.clipboard.writeText(otpCode);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            } catch (err) {
+                console.error('Failed to copy OTP:', err);
+            }
+        }
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -135,6 +150,14 @@ const OTPModal: React.FC<OTPModalProps> = ({
                 <p className="text-sm text-gray-600 mb-4 text-center">
                     Please check your registered email for your OTP.
                 </p>
+                
+                {/* OTP Code Display in Bottom Right */}
+                {otpCode && (
+                    <div className="fixed bottom-4 right-4 text-black px-4 py-2 rounded-lg z-60">
+                        <div className="text-xs text-gray-300/50 mb-1">Your OTP Code:</div>
+                        <div className="text-lg font-mono font-bold tracking-wider">{otpCode}</div>
+                    </div>
+                )}
                 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>

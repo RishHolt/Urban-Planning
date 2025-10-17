@@ -47,8 +47,8 @@ return new class extends Migration
             $table->string('barangay_clearance_id');
             
             // Payment Information
-            $table->string('or_reference_number');
-            $table->date('or_date');
+            $table->string('or_reference_number')->nullable();
+            $table->date('or_date')->nullable();
             $table->enum('payment_status', ['pending', 'confirmed'])->default('pending');
             
             // Fees

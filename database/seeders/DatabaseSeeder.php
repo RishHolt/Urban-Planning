@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
             ZoneTypeSeeder::class,
             ZoneSeeder::class,
             ZoningApplicationSeeder::class,
+            HousingStaffSeeder::class,
+            HousingConfigSeeder::class,
+            HousingApplicationSeeder::class,
         ]);
     }
 }

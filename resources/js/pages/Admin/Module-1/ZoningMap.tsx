@@ -383,6 +383,8 @@ const DrawingControls = ({
             };
 
             console.log('New zone created:', newZone);
+            console.log('Layer bounds:', layer.getBounds());
+            console.log('GeoJSON coordinates:', layer.toGeoJSON().geometry.coordinates);
 
             // Add popup
             layer.bindPopup(`
@@ -799,7 +801,7 @@ const ZoningMap = () => {
     name: '',
     latitude: '',
     longitude: '',
-    zoomLevel: 14
+    zoomLevel: 16
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -867,16 +869,42 @@ const ZoningMap = () => {
         const zonesData = zonesRes.data;
         const zoneTypesData = zoneTypesRes.data;
         const regionsData = regionsRes.data;
+        
+        console.log('🔄 Admin: Raw zones data:', zonesData);
+        console.log('🔄 Admin: Raw zone types data:', zoneTypesData);
 
         // Transform zones data to match frontend interface
-        const transformedZones: ZoneData[] = zonesData.map((zone: any) => ({
-          id: zone.id,
-          name: zone.name,
-          type: zone.typeId, // Map typeId to type
-          color: zone.color,
-          coordinates: zone.coordinates,
-          area: zone.area
-        }));
+        const transformedZones: ZoneData[] = zonesData.map((zone: any) => {
+          // Convert raw coordinates to GeoJSON format for Admin component
+          let geoJsonCoordinates = null;
+          if (zone.coordinates && Array.isArray(zone.coordinates) && zone.coordinates.length > 0) {
+            // API returns [lng, lat] format, Leaflet GeoJSON expects [lng, lat] - no swapping needed
+            geoJsonCoordinates = {
+              type: "Feature",
+              geometry: {
+                type: "Polygon",
+                coordinates: [zone.coordinates]
+              },
+              properties: {
+                id: zone.id,
+                name: zone.name,
+                type: zone.typeId || zone.zone_type?.id || zone.type,
+                color: zone.color
+              }
+            };
+          }
+          
+          return {
+            id: zone.id,
+            name: zone.name,
+            type: zone.typeId || zone.zone_type?.id || zone.type, // Handle different API formats
+            color: zone.color,
+            coordinates: geoJsonCoordinates,
+            area: zone.area
+          };
+        });
+        
+        console.log('🔄 Admin: Transformed zones:', transformedZones);
 
         // Create allZoneTypes object from API data
         const allTypes = zoneTypesData.reduce((acc: any, zoneType: any) => ({
@@ -978,12 +1006,21 @@ const ZoningMap = () => {
         return;
       }
       
+      // Extract raw coordinates from GeoJSON for API
+      let rawCoordinates = [];
+      if (zone.coordinates && zone.coordinates.geometry && zone.coordinates.geometry.coordinates) {
+        // Extract coordinates from GeoJSON - Leaflet GeoJSON is already [lng, lat] format
+        rawCoordinates = zone.coordinates.geometry.coordinates[0];
+      }
+      
+      console.log('🔄 Raw coordinates for API:', rawCoordinates);
+      
       // Save to API
       const apiData = {
         name: zone.name,
         typeId: parseInt(zone.type), // Ensure typeId is an integer
         color: zone.color,
-        coordinates: zone.coordinates,
+        coordinates: rawCoordinates,
         area: zone.area,
         cityId: 'caloocan'
       };
@@ -1168,7 +1205,25 @@ const ZoningMap = () => {
 
   // Navigate to a specific zone
   const flyToZone = (zone: ZoneData) => {
-    if (!mapRef.current || !zone.coordinates) return;
+    if (!mapRef.current) {
+      console.log('❌ Map reference not available');
+      return;
+    }
+    
+    if (!zone) {
+      console.log('❌ Zone is undefined or null');
+      return;
+    }
+    
+    if (!zone.coordinates) {
+      console.log('❌ Zone coordinates not available');
+      return;
+    }
+    
+    if (!zone.coordinates.geometry || !zone.coordinates.geometry.coordinates) {
+      console.log('❌ Zone coordinates geometry not available');
+      return;
+    }
     
     try {
       // Calculate bounds from zone coordinates
@@ -1276,7 +1331,7 @@ const ZoningMap = () => {
             : region
         ));
         
-        setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 14 });
+        setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 16 });
         setIsRegionModalOpen(false);
         setIsEditingRegion(false);
         setEditingRegionId(null);
@@ -1327,7 +1382,7 @@ const ZoningMap = () => {
       };
       
       setAllRegions(prev => [...prev, region]);
-      setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 14 });
+      setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 16 });
       setIsRegionModalOpen(false);
       setRegionValidationErrors({});
       
@@ -1432,7 +1487,7 @@ const ZoningMap = () => {
         setIsRegionModalOpen(false);
         setIsEditingRegion(false);
         setEditingRegionId(null);
-        setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 14 });
+        setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 16 });
         
         await Swal.success('Region Deleted!', `"${region.name}" has been removed.`);
       } catch (error) {
@@ -2195,7 +2250,7 @@ const ZoningMap = () => {
            <div className="flex-1 shadow-lg border-2 border-gray-200 rounded-lg min-h-96 overflow-hidden relative">
              <MapContainer
               center={caloocanCenter}
-              zoom={12}
+              zoom={15}
               style={{ height: '100%', width: '100%' }}
               className="z-0"
             >
@@ -2424,7 +2479,7 @@ const ZoningMap = () => {
             setIsRegionModalOpen(false);
             setIsEditingRegion(false);
             setEditingRegionId(null);
-            setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 14 });
+            setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 16 });
             setRegionValidationErrors({});
             setError(null);
           }
@@ -2546,7 +2601,7 @@ const ZoningMap = () => {
                     setIsRegionModalOpen(false);
                     setIsEditingRegion(false);
                     setEditingRegionId(null);
-                    setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 14 });
+                    setNewRegion({ name: '', latitude: '', longitude: '', zoomLevel: 16 });
                     setRegionValidationErrors({});
                     setError(null);
                   }

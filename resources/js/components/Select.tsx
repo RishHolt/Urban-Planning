@@ -9,7 +9,7 @@ interface SelectOption {
 }
 
 interface SelectProps {
-  options: SelectOption[];
+  options?: SelectOption[];
   value?: string | number | (string | number)[];
   onChange: (value: string | number | (string | number)[]) => void;
   placeholder?: string;
@@ -58,7 +58,7 @@ const Select: React.FC<SelectProps> = ({
   };
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
+  const filteredOptions = (options || []).filter(option =>
     option.label.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -74,7 +74,7 @@ const Select: React.FC<SelectProps> = ({
 
   // Get selected options
   const selectedValues = Array.isArray(value) ? value : value ? [value] : [];
-  const selectedOptions = options.filter(option => 
+  const selectedOptions = (options || []).filter(option => 
     selectedValues.includes(option.value)
   );
 
@@ -166,7 +166,7 @@ const Select: React.FC<SelectProps> = ({
       return `${selectedOptions.length} selected`;
     }
     
-    const selected = options.find(option => option.value === value);
+    const selected = (options || []).find(option => option.value === value);
     return selected ? selected.label : placeholder;
   };
 
@@ -311,4 +311,28 @@ const Select: React.FC<SelectProps> = ({
   );
 };
 
+// Individual component exports for compatibility
+export const SelectTrigger: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => {
+  return <div className={`flex items-center justify-between w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary ${className}`}>
+    {children}
+  </div>;
+};
+
+export const SelectValue: React.FC<{ placeholder?: string }> = ({ placeholder = "Select an option..." }) => {
+  return <span className="text-gray-400">{placeholder}</span>;
+};
+
+export const SelectContent: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className = "" }) => {
+  return <div className={`absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg ${className}`}>
+    {children}
+  </div>;
+};
+
+export const SelectItem: React.FC<{ value: string | number; children: React.ReactNode; className?: string }> = ({ value, children, className = "" }) => {
+  return <button type="button" className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none text-gray-900 ${className}`}>
+    {children}
+  </button>;
+};
+
+export { Select };
 export default Select;

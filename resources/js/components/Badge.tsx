@@ -144,4 +144,5 @@ export const PositionedBadge: React.FC<PositionedBadgeProps> = ({
   );
 };
 
+export { Badge };
 export default Badge;
