@@ -106,6 +106,15 @@ const Home: React.FC = () => {
             color: 'bg-purple-100',
             textColor: 'text-purple-800',
             borderColor: 'border-purple-200'
+        },
+        {
+            id: 4,
+            title: 'Infrastructure Projects',
+            description: 'View ongoing and completed infrastructure projects in your area',
+            icon: '/images/services/Infrastructure-Projects.png',
+            color: 'bg-orange-100',
+            textColor: 'text-orange-800',
+            borderColor: 'border-orange-200'
         }
     ];
 
@@ -204,6 +213,9 @@ const Home: React.FC = () => {
                                         router.visit('/zoning/map');
                                     } else if (service.id === 3) {
                                         setIsHousingModalOpen(true);
+                                    } else if (service.id === 4) {
+                                        // Navigate to infrastructure projects map
+                                        router.visit('/infrastructure/public');
                                     }
                                 }}
                                 className={`${service.color} ${service.borderColor} border-2 rounded-lg shadow-md overflow-hidden flex flex-col h-full cursor-pointer hover:shadow-2xl hover:scale-105 transition-all duration-300 ease-in-out transform`}

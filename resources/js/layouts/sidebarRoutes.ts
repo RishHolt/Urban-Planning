@@ -26,7 +26,7 @@ export const moduleRoutes: SidebarRoute[] = [
 		icon: "Map",
 		roles: ['IT_ADMIN', 'ZONING_ADMIN', 'ZONING_OFFICER'],
 		children: [
-			{ label: "Dashboard", path: "/zoning/dashboard", icon: "LayoutDashboard" },
+			{ label: "Dashboard", path: "/zoning", icon: "LayoutDashboard" },
 			{ label: "Applications", path: "/zoning/applications", icon: "FileText" },
 			{ label: "Zoning Map", path: "/zoning/admin/map", icon: "MapPin" },
 			{ label: "Logs", path: "/zoning/logs", icon: "History" }
@@ -40,7 +40,8 @@ export const moduleRoutes: SidebarRoute[] = [
 		children: [
 			{ label: "Dashboard", path: "/building", icon: "LayoutDashboard" },
 			{ label: "Technical Review", path: "/building/review", icon: "FileText" },
-			{ label: "Logs", path: "/building/logs", icon: "History" },
+			{ label: "Applications", path: "/building/applications", icon: "FileText" },
+			{ label: "Logs", path: "/building/logs", icon: "History" }
 		]
 	},
 	{
@@ -51,20 +52,18 @@ export const moduleRoutes: SidebarRoute[] = [
 		children: [
 			{ label: "Dashboard", path: "/housing", icon: "LayoutDashboard" },
 			{ label: "Applications", path: "/housing/applications", icon: "FileText" },
-			// { label: "Inspections", path: "/housing/inspections", icon: "Eye" },
-			// { label: "Eligibility Config", path: "/housing/config", icon: "Settings" },
 			{ label: "Logs", path: "/housing/logs", icon: "History" }
 		]
 	},
 	{
 		label: "Occupancy Monitoring",
 		path: "/occupancy",
-		icon: "Eye",
-		roles: ['IT_ADMIN', 'OCCUPANCY_ADMIN', 'OCCUPANCY_OFFICER'],
+		icon: "Building",
+		roles: ['IT_ADMIN', 'HOUSING_ADMIN', 'HOUSING_OFFICER', 'HOUSING_INSPECTOR'],
 		children: [
 			{ label: "Dashboard", path: "/occupancy", icon: "LayoutDashboard" },
-			{ label: "Inspections", path: "/occupancy/inspections", icon: "FileText" },
-			{ label: "Reports", path: "/occupancy/reports", icon: "FileText" },
+			{ label: "Occupancy Records", path: "/occupancy/records", icon: "FileText" },
+			{ label: "Inspections", path: "/occupancy/inspections", icon: "ClipboardCheck" },
 			{ label: "Logs", path: "/occupancy/logs", icon: "History" }
 		]
 	},
@@ -76,6 +75,8 @@ export const moduleRoutes: SidebarRoute[] = [
 		children: [
 			{ label: "Dashboard", path: "/infrastructure", icon: "LayoutDashboard" },
 			{ label: "Projects", path: "/infrastructure/projects", icon: "ClipboardList" },
+			{ label: "Contractors", path: "/infrastructure/contractors", icon: "Users" },
+			{ label: "Inspections", path: "/infrastructure/inspections", icon: "ClipboardCheck" },
 			{ label: "Reports", path: "/infrastructure/reports", icon: "FileText" },
 			{ label: "Logs", path: "/infrastructure/logs", icon: "History" }
 		]

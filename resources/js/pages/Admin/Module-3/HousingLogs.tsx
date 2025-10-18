@@ -484,10 +484,12 @@ const HousingLogs = () => {
                                 <div className="flex items-center space-x-4 text-sm text-gray-500">
                                   <span className="flex items-center space-x-1">
                                     <User className="w-4 h-4" />
-                                    <span>{log.actor.name}</span>
-                                    <Badge className={getRoleColor(log.actor.role)}>
-                                      {log.actor.role}
-                                    </Badge>
+                                    <span>{log.actor?.name || 'System'}</span>
+                                    {log.actor?.role && (
+                                      <Badge className={getRoleColor(log.actor.role)}>
+                                        {log.actor.role}
+                                      </Badge>
+                                    )}
                                   </span>
                                   <span className="flex items-center space-x-1">
                                     <Clock className="w-4 h-4" />

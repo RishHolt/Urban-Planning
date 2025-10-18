@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class ZoningApplicationController extends Controller
@@ -757,6 +758,63 @@ class ZoningApplicationController extends Controller
                 'total' => $history->total()
             ]
         ]);
+    }
+
+    /**
+     * Get dashboard statistics for zoning applications
+     */
+    public function getDashboardStats(): JsonResponse
+    {
+        try {
+            $stats = [
+                'total_applications' => ZoningApplication::count(),
+                'pending_review' => ZoningApplication::whereIn('status', ['submitted', 'initial_review', 'technical_review'])->count(),
+                'approved' => ZoningApplication::where('status', 'approved')->count(),
+                'rejected' => ZoningApplication::where('status', 'rejected')->count(),
+                'under_technical_review' => ZoningApplication::where('status', 'technical_review')->count(),
+                'awaiting_payment' => ZoningApplication::where('payment_status', 'pending')->count(),
+                'average_processing_time' => $this->calculateAverageProcessingTime(),
+                'recent_submissions' => ZoningApplication::whereDate('created_at', '>=', now()->subDays(7))->count(),
+                'applications_this_month' => ZoningApplication::whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->count(),
+                'status_breakdown' => ZoningApplication::select('status', DB::raw('count(*) as count'))
+                    ->groupBy('status')
+                    ->pluck('count', 'status')
+                    ->toArray(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => $stats
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error loading zoning dashboard stats: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load dashboard statistics'
+            ], 500);
+        }
+    }
+
+    /**
+     * Calculate average processing time in days
+     */
+    private function calculateAverageProcessingTime(): float
+    {
+        $completed = ZoningApplication::whereIn('status', ['approved', 'rejected'])
+            ->whereNotNull('updated_at')
+            ->get();
+
+        if ($completed->isEmpty()) {
+            return 0;
+        }
+
+        $totalDays = $completed->sum(function ($app) {
+            return $app->created_at->diffInDays($app->updated_at);
+        });
+
+        return round($totalDays / $completed->count(), 1);
     }
 
 

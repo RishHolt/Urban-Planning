@@ -13,8 +13,8 @@ interface HousingApplication {
   full_name: string;
   current_address: string;
   monthly_income: number;
-  family_size: number;
-  housing_status: string;
+  household_size: number;
+  housing_type: string;
   created_at: string;
   updated_at: string;
 }
@@ -74,7 +74,9 @@ const MyHousingApplications: React.FC = () => {
         const result = await response.json();
         
         if (result.success && result.data) {
-          setApplications(Array.isArray(result.data) ? result.data : []);
+          // Handle paginated response - data is nested under data.data
+          const applicationsData = result.data.data || result.data;
+          setApplications(Array.isArray(applicationsData) ? applicationsData : []);
         }
       } catch (error) {
         console.error('Error loading applications:', error);
@@ -92,8 +94,8 @@ const MyHousingApplications: React.FC = () => {
             full_name: 'Juan Dela Cruz',
             current_address: '123 Main Street, Barangay 1, Caloocan City',
             monthly_income: 25000,
-            family_size: 4,
-            housing_status: 'Renter',
+            household_size: 4,
+            housing_type: 'rented',
             created_at: '2024-01-15T10:30:00Z',
             updated_at: '2024-01-15T10:30:00Z'
           },
@@ -106,8 +108,8 @@ const MyHousingApplications: React.FC = () => {
             full_name: 'Maria Santos',
             current_address: '456 Business Ave, Barangay 2, Caloocan City',
             monthly_income: 18000,
-            family_size: 3,
-            housing_status: 'Informal Settler',
+            household_size: 3,
+            housing_type: 'informal',
             created_at: '2024-01-10T09:15:00Z',
             updated_at: '2024-01-12T14:20:00Z'
           }
@@ -251,7 +253,7 @@ const MyHousingApplications: React.FC = () => {
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <User className="w-4 h-4 mr-2" />
-                      {application.family_size} family members
+                      {application.household_size} family members
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <span>₱{application.monthly_income.toLocaleString()}/month</span>
@@ -268,8 +270,8 @@ const MyHousingApplications: React.FC = () => {
 
                   <div className="border-t border-gray-200 pt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Housing Status</span>
-                      <span className="font-semibold text-gray-900 capitalize">{application.housing_status}</span>
+                      <span className="text-sm text-gray-600">Housing Type</span>
+                      <span className="font-semibold text-gray-900 capitalize">{application.housing_type}</span>
                     </div>
                   </div>
                 </Card>

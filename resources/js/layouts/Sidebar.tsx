@@ -7,6 +7,7 @@ import {
 	Building2,
 	Home,
 	Users,
+	Building,
 	Network,
 	User,
 	Settings,
@@ -20,6 +21,8 @@ import {
 	History,
 	ArrowLeft,
 	Eye,
+	ClipboardCheck,
+	ClipboardList,
 } from "lucide-react";
 import { Link, router, usePage } from "@inertiajs/react";
 import Swal from "../components/Swal";
@@ -133,6 +136,7 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 		Map,
 		Building2,
 		Home,
+		Building,
 		Users,
 		Network,
 		FileText,
@@ -144,6 +148,8 @@ const Sidebar = ({ onClose }: SidebarProps) => {
 		History,
 		Eye,
 		Settings,
+		ClipboardCheck,
+		ClipboardList,
 	};
 
 	// Routes are already filtered in getSidebarRoutes() based on user role

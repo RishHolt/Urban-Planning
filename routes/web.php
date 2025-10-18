@@ -47,6 +47,19 @@ Route::get('/zoning/map', function () {
     return Inertia::render('Users/Services/ZoningMap');
 })->name('zoning.map.public');
 
+// Public Infrastructure Pages (Citizen Portal)
+Route::get('/infrastructure/public', function () {
+    return Inertia::render('Users/Services/PublicInfrastructureMap');
+})->name('infrastructure.public.map');
+
+Route::get('/infrastructure/public/projects', function () {
+    return Inertia::render('Users/Services/PublicProjectsList');
+})->name('infrastructure.public.list');
+
+Route::get('/infrastructure/public/projects/{id}', function ($id) {
+    return Inertia::render('Users/Services/PublicProjectDetails', ['projectId' => $id]);
+})->name('infrastructure.public.show');
+
 // CSRF Token endpoint
 Route::get('/api/csrf-token', function () {
     return response()->json([
@@ -225,7 +238,7 @@ Route::group([], function () {
     
     // Building Review Routes
     Route::get('building', function () {
-        return Inertia::render('Admin/BuildingDashboard');
+        return Inertia::render('Admin/Module-2/BuildingDashboard');
     })->name('building.dashboard');
     
 Route::get('building/review', function () {
@@ -270,6 +283,56 @@ Route::get('building/logs', function () {
     Route::get('user-management', function () {
         return Inertia::render('Admin/UserManagement');
     })->name('user-management');
+    
+    // Occupancy Monitoring Routes (Module-4)
+    Route::get('occupancy', function () {
+        return Inertia::render('Admin/Module-4/OccupancyDashboard');
+    })->name('occupancy.dashboard');
+    
+    Route::get('occupancy/records', function () {
+        return Inertia::render('Admin/Module-4/OccupancyList');
+    })->name('occupancy.records');
+    
+    Route::get('occupancy/records/{id}', function ($id) {
+        return Inertia::render('Admin/Module-4/OccupancyDetails', ['occupancyId' => $id]);
+    })->name('occupancy.records.show');
+    
+    Route::get('occupancy/inspections', function () {
+        return Inertia::render('Admin/Module-4/InspectionsList');
+    })->name('occupancy.inspections');
+    
+    Route::get('occupancy/logs', function () {
+        return Inertia::render('Admin/Module-4/OccupancyLogs');
+    })->name('occupancy.logs');
+    
+    // Infrastructure Project Coordination Routes (Module-5)
+    Route::get('infrastructure', function () {
+        return Inertia::render('Admin/Module-5/InfrastructureDashboard');
+    })->name('infrastructure.dashboard');
+    
+    Route::get('infrastructure/projects', function () {
+        return Inertia::render('Admin/Module-5/ProjectsList');
+    })->name('infrastructure.projects');
+    
+    Route::get('infrastructure/projects/{id}', function ($id) {
+        return Inertia::render('Admin/Module-5/ProjectDetails', ['projectId' => $id]);
+    })->name('infrastructure.projects.show');
+    
+    Route::get('infrastructure/contractors', function () {
+        return Inertia::render('Admin/Module-5/ContractorsList');
+    })->name('infrastructure.contractors');
+    
+    Route::get('infrastructure/inspections', function () {
+        return Inertia::render('Admin/Module-5/InspectionsList');
+    })->name('infrastructure.inspections');
+    
+    Route::get('infrastructure/reports', function () {
+        return Inertia::render('Admin/Module-5/ReportsPage');
+    })->name('infrastructure.reports');
+    
+    Route::get('infrastructure/logs', function () {
+        return Inertia::render('Admin/Module-5/InfrastructureLogs');
+    })->name('infrastructure.logs');
 });
 
 require __DIR__.'/settings.php';

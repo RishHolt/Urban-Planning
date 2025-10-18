@@ -2250,7 +2250,9 @@ const ZoningMap = () => {
            <div className="flex-1 shadow-lg border-2 border-gray-200 rounded-lg min-h-96 overflow-hidden relative">
              <MapContainer
               center={caloocanCenter}
-              zoom={15}
+              zoom={3}
+              scrollWheelZoom={true}
+              wheelPxPerZoomLevel={200}              // increases smoothness
               style={{ height: '100%', width: '100%' }}
               className="z-0"
             >
@@ -2283,40 +2285,6 @@ const ZoningMap = () => {
               ) : (
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white bg-opacity-90 px-4 py-2 rounded-lg shadow-lg z-50">
                   <p className="text-gray-600 text-sm">Loading zone types...</p>
-                </div>
-              )}
-              {/* Debug info */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white p-2 rounded text-xs z-50">
-                  <div>Zones: {zones.length} | Map: {mapRef.current ? 'Ready' : 'Not Ready'}</div>
-                  <button 
-                    onClick={() => {
-                      if (mapRef.current && zones.length > 0) {
-                        const group = new L.FeatureGroup();
-                        zones.forEach(zone => {
-                          if (zone.coordinates) {
-                            group.addLayer(L.geoJSON(zone.coordinates));
-                          }
-                        });
-                        if (group.getLayers().length > 0) {
-                          mapRef.current.fitBounds(group.getBounds());
-                        }
-                      }
-                    }}
-                    className="mt-1 px-2 py-1 bg-blue-600 text-white rounded text-xs"
-                  >
-                    Fit to Zones
-                  </button>
-                  <button 
-                    onClick={() => {
-                      console.log('Manual zone loading triggered');
-                      // Trigger zone loading by updating a dummy state
-                      setZones(prev => [...prev]);
-                    }}
-                    className="mt-1 px-2 py-1 bg-green-600 text-white rounded text-xs"
-                  >
-                    Reload Zones
-                  </button>
                 </div>
               )}
             </MapContainer>

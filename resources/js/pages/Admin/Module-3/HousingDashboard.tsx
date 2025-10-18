@@ -14,12 +14,26 @@ import {
   Calendar,
   Eye,
   Settings,
-  History,
+  History as HistoryIcon,
   Building,
   MapPin,
-  Shield
+  Shield,
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
-// CardHeader, CardTitle, CardDescription, CardContent are not available, using Card component instead
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 
 interface DashboardStats {
   total_applications: number;
@@ -153,7 +167,7 @@ const HousingDashboard = () => {
     {
       title: 'Application Logs',
       description: 'View all application activities',
-      icon: History,
+      icon: HistoryIcon,
       href: '/housing/logs',
       color: 'bg-blue-50 border-blue-200 text-blue-800'
     }
@@ -167,245 +181,338 @@ const HousingDashboard = () => {
     );
   }
 
+  // Prepare chart data
+  const statusData = [
+    { name: 'Approved', value: stats?.approved_applications || 0, color: '#10B981' },
+    { name: 'Pending', value: stats?.pending_applications || 0, color: '#FBBF24' },
+    { name: 'Rejected', value: stats?.rejected_applications || 0, color: '#EF4444' }
+  ];
+
+  const COLORS = ['#10B981', '#FBBF24', '#EF4444'];
+
   return (
     <div className="space-y-6">
       <Head title="Housing Dashboard" />
       {/* Page Header */}
-      <div className="flex-shrink-0 mb-4 pb-2">
-        <div className="flex justify-between items-start">
-          <Header 
-            variant="secondary"
-            title="Housing Registry Dashboard"
-            subtext="Monitor and manage housing assistance applications."
-          />
+      <div className="flex justify-between items-start">
+        <Header 
+          variant="secondary"
+          title="Housing Registry Dashboard"
+          subtext="Monitor and manage housing assistance applications."
+        />
+        
+        {/* Quick Actions */}
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => window.location.href = '/housing/applications'}
+            variant="outlined" 
+            leftIcon={<Eye size={16} />}
+          >
+            View All
+          </Button>
+          <Button 
+            onClick={() => window.location.href = '/housing/logs'}
+            leftIcon={<HistoryIcon size={16} />}
+          >
+            View Logs
+          </Button>
         </div>
       </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card title="Total Applications" padding="lg">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium">Total Applications</h3>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stats?.total_applications || 0}</div>
-              <p className="text-xs text-muted-foreground">
-                All time applications
-              </p>
-            </Card>
-
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium">Pending Review</h3>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="p-6">
-                <div className="text-2xl font-bold">{stats?.pending_applications || 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  Awaiting staff action
-                </p>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-medium">Approved</h3>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="p-6">
-                <div className="text-2xl font-bold">{stats?.approved_applications || 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  Successfully approved
-                </p>
-              </div>
-            </Card>
-
-          </div>
-
-          {/* Additional Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Processing Time</h3>
-              </div>
-              <div className="p-6">
-                <div className="text-3xl font-bold">{stats?.average_processing_time || 0}</div>
-                <p className="text-sm text-muted-foreground">Average days to process</p>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Recent Submissions</h3>
-              </div>
-              <div className="p-6">
-                <div className="text-3xl font-bold">{stats?.recent_submissions || 0}</div>
-                <p className="text-sm text-muted-foreground">Last 7 days</p>
-              </div>
-            </Card>
-
-            <Card>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Needs Attention</h3>
-              </div>
-              <div className="p-6">
-                <div className="text-3xl font-bold text-amber-600">{stats?.applications_needing_attention || 0}</div>
-                <p className="text-sm text-muted-foreground">Requires immediate action</p>
-              </div>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Quick Actions */}
-            <div className="lg:col-span-2">
-              <Card>
-                <div className="mb-4">
-                  <h3 className="flex items-center space-x-2 text-lg font-semibold">
-                    <Settings className="w-5 h-5" />
-                    <span>Quick Actions</span>
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Common tasks and workflows
-                  </p>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {quickActions.map((action, index) => {
-                      const Icon = action.icon;
-                      return (
-                        <Link key={index} href={action.href}>
-                          <Card className={`cursor-pointer hover:shadow-md transition-shadow ${action.color}`}>
-                            <div className="p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="p-2 bg-white rounded-lg">
-                                  <Icon className="w-5 h-5" />
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="font-semibold">{action.title}</h3>
-                                  <p className="text-sm opacity-80">{action.description}</p>
-                                  {action.count !== undefined && (
-                                    <Badge variant="secondary" className="mt-1">
-                                      {action.count} pending
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </Card>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Recent Applications */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <div className="flex items-center justify-between">
             <div>
-              <Card>
-                <div className="mb-4">
-                  <h3 className="flex items-center space-x-2 text-lg font-semibold">
-                    <Clock className="w-5 h-5" />
-                    <span>Recent Applications</span>
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Latest submitted applications
-                  </p>
-                </div>
-                <div className="p-6">
-                  {recentApplications.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No recent applications</p>
-                  ) : (
-                    <div className="space-y-4">
-                      {recentApplications.map((application) => (
-                        <div key={application.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-1">
-                              <span className="font-medium text-sm">{application.application_number}</span>
-                              {getStatusBadge(application.status)}
-                            </div>
-                            <p className="text-sm text-gray-600">{application.full_name}</p>
-                            <p className="text-xs text-gray-500">
-                              {getProgramTypeLabel(application.program_type)} • {formatDate(application.submitted_at)}
-                            </p>
-                            {application.score !== null && (
-                              <div className="mt-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-xs text-gray-500">Score:</span>
-                                  <div className="w-16 bg-gray-200 rounded-full h-1">
-                                    <div 
-                                      className="bg-blue-600 h-1 rounded-full"
-                                      style={{ width: `${application.score}%` }}
-                                    ></div>
-                                  </div>
-                                  <span className="text-xs font-medium">{application.score}%</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          <Link href={`/housing/applications/${application.id}`}>
-                            <Button variant="outlined" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </Link>
+              <p className="text-sm font-medium text-blue-700">Total Applications</p>
+              <p className="text-3xl font-bold text-blue-900 mt-1">{stats?.total_applications || 0}</p>
+              <p className="text-xs text-blue-600 mt-1 flex items-center">
+                <TrendingUp className="w-3 h-3 mr-1" /> All time
+              </p>
+            </div>
+            <div className="p-3 bg-blue-500 rounded-lg">
+              <FileText className="w-8 h-8 text-white" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-yellow-700">Pending Review</p>
+              <p className="text-3xl font-bold text-yellow-900 mt-1">{stats?.pending_applications || 0}</p>
+              <p className="text-xs text-yellow-600 mt-1 flex items-center">
+                <Clock className="w-3 h-3 mr-1" /> Needs action
+              </p>
+            </div>
+            <div className="p-3 bg-yellow-500 rounded-lg">
+              <Clock className="w-8 h-8 text-white" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-700">Approved</p>
+              <p className="text-3xl font-bold text-green-900 mt-1">{stats?.approved_applications || 0}</p>
+              <p className="text-xs text-green-600 mt-1 flex items-center">
+                <CheckCircle className="w-3 h-3 mr-1" /> Completed
+              </p>
+            </div>
+            <div className="p-3 bg-green-500 rounded-lg">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6 bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-red-700">Rejected</p>
+              <p className="text-3xl font-bold text-red-900 mt-1">{stats?.rejected_applications || 0}</p>
+              <p className="text-xs text-red-600 mt-1 flex items-center">
+                <AlertTriangle className="w-3 h-3 mr-1" /> Declined
+              </p>
+            </div>
+            <div className="p-3 bg-red-500 rounded-lg">
+              <AlertTriangle className="w-8 h-8 text-white" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Application Status Bar Chart */}
+        <Card className="p-6 lg:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Application Status Overview</h3>
+              <p className="text-sm text-gray-600">Current status distribution</p>
+            </div>
+            <BarChart3 className="w-5 h-5 text-gray-400" />
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={statusData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
+              <Tooltip 
+                contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }}
+                cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+              />
+              <Bar dataKey="value" fill="#3B82F6" radius={[8, 8, 0, 0]}>
+                {statusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+
+        {/* Status Distribution Pie Chart */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Status Distribution</h3>
+              <p className="text-sm text-gray-600">Percentage breakdown</p>
+            </div>
+            <TrendingUp className="w-5 h-5 text-gray-400" />
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={statusData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={(props: any) => `${((props.percent || 0) * 100).toFixed(0)}%`}
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {statusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Processing Time</h3>
+                <Clock className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="text-3xl font-bold">{stats?.average_processing_time || 0}</div>
+              <p className="text-sm text-muted-foreground">Average days to process</p>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Recent Submissions</h3>
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="text-3xl font-bold">{stats?.recent_submissions || 0}</div>
+              <p className="text-sm text-muted-foreground">Last 7 days</p>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Needs Attention</h3>
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="text-3xl font-bold text-amber-600">{stats?.applications_needing_attention || 0}</div>
+              <p className="text-sm text-muted-foreground">Requires immediate action</p>
+            </Card>
+          </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Quick Actions */}
+        <div className="lg:col-span-2">
+          <div className="mb-6">
+            <h3 className="flex items-center space-x-2 text-lg font-semibold">
+              <Settings className="w-5 h-5" />
+              <span>Quick Actions</span>
+            </h3>
+            <p className="text-sm text-gray-600">
+              Common tasks and workflows
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon;
+              return (
+                <Link key={index} href={action.href}>
+                  <Card className={`cursor-pointer hover:shadow-md transition-shadow ${action.color}`}>
+                    <div className="p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 bg-white rounded-lg">
+                          <Icon className="w-5 h-5" />
                         </div>
-                      ))}
+                        <div className="flex-1">
+                          <h3 className="font-semibold">{action.title}</h3>
+                          <p className="text-sm opacity-80">{action.description}</p>
+                          {action.count !== undefined && (
+                            <Badge variant="secondary" className="mt-1">
+                              {action.count} pending
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  
-                  <div className="mt-4 pt-4 border-t">
-                    <Link href="/housing/applications">
-                      <Button variant="outlined" className="w-full">
-                        View All Applications
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Recent Applications */}
+        <div>
+          <div className="mb-6">
+            <h3 className="flex items-center space-x-2 text-lg font-semibold">
+              <Clock className="w-5 h-5" />
+              <span>Recent Applications</span>
+            </h3>
+            <p className="text-sm text-gray-600">
+              Latest submitted applications
+            </p>
+          </div>
+          <Card className="p-6">
+            {recentApplications.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No recent applications</p>
+            ) : (
+              <div className="space-y-4">
+                {recentApplications.map((application) => (
+                  <div key={application.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-medium text-sm">{application.application_number}</span>
+                        {getStatusBadge(application.status)}
+                      </div>
+                      <p className="text-sm text-gray-600">{application.full_name}</p>
+                      <p className="text-xs text-gray-500">
+                        {getProgramTypeLabel(application.program_type)} • {formatDate(application.submitted_at)}
+                      </p>
+                      {application.score !== null && (
+                        <div className="mt-1">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs text-gray-500">Score:</span>
+                            <div className="w-16 bg-gray-200 rounded-full h-1">
+                              <div 
+                                className="bg-blue-600 h-1 rounded-full"
+                                style={{ width: `${application.score}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-xs font-medium">{application.score}%</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Link href={`/housing/applications/${application.id}`}>
+                      <Button variant="outlined" size="sm">
+                        <Eye className="w-4 h-4" />
                       </Button>
                     </Link>
                   </div>
-                </div>
-              </Card>
+                ))}
+              </div>
+            )}
+            
+            <div className="mt-4 pt-4 border-t">
+              <Link href="/housing/applications">
+                <Button variant="outlined" className="w-full">
+                  View All Applications
+                </Button>
+              </Link>
             </div>
-          </div>
+          </Card>
+        </div>
+      </div>
 
-          {/* Program Overview */}
-          <div className="mt-8">
-            <Card>
-              <div className="mb-4">
-                <h3 className="flex items-center space-x-2 text-lg font-semibold">
-                  <Building className="w-5 h-5" />
-                  <span>Program Overview</span>
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Housing assistance programs and statistics
-                </p>
-              </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="p-3 bg-blue-100 rounded-full w-12 h-12 mx-auto mb-3">
-                      <Home className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <h3 className="font-semibold text-blue-900">Rental Subsidy</h3>
-                    <p className="text-sm text-blue-700">Financial assistance for rent payments</p>
-                  </div>
-                  
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="p-3 bg-green-100 rounded-full w-12 h-12 mx-auto mb-3">
-                      <Building className="w-6 h-6 text-green-600" />
-                    </div>
-                    <h3 className="font-semibold text-green-900">Socialized Housing</h3>
-                    <p className="text-sm text-green-700">Affordable housing units for low-income families</p>
-                  </div>
-                  
-                  <div className="text-center p-4 bg-purple-50 rounded-lg">
-                    <div className="p-3 bg-purple-100 rounded-full w-12 h-12 mx-auto mb-3">
-                      <MapPin className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <h3 className="font-semibold text-purple-900">In-City Relocation</h3>
-                    <p className="text-sm text-purple-700">Relocation assistance within the city</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
+      {/* Program Overview */}
+      <div>
+        <div className="mb-6">
+          <h3 className="flex items-center space-x-2 text-lg font-semibold">
+            <Building className="w-5 h-5" />
+            <span>Program Overview</span>
+          </h3>
+          <p className="text-sm text-gray-600">
+            Housing assistance programs and statistics
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="text-center p-6 bg-blue-50 rounded-lg">
+            <div className="p-3 bg-blue-100 rounded-full w-12 h-12 mx-auto mb-3">
+              <Home className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="font-semibold text-blue-900">Rental Subsidy</h3>
+            <p className="text-sm text-blue-700">Financial assistance for rent payments</p>
           </div>
+          
+          <div className="text-center p-6 bg-green-50 rounded-lg">
+            <div className="p-3 bg-green-100 rounded-full w-12 h-12 mx-auto mb-3">
+              <Building className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="font-semibold text-green-900">Socialized Housing</h3>
+            <p className="text-sm text-green-700">Affordable housing units for low-income families</p>
+          </div>
+          
+          <div className="text-center p-6 bg-purple-50 rounded-lg">
+            <div className="p-3 bg-purple-100 rounded-full w-12 h-12 mx-auto mb-3">
+              <MapPin className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="font-semibold text-purple-900">In-City Relocation</h3>
+            <p className="text-sm text-purple-700">Relocation assistance within the city</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

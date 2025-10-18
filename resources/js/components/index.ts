@@ -25,6 +25,7 @@ export { default as Radio, RadioGroup } from './Radio';
 export { default as Switch } from './Switch';
 export { default as Badge, BadgeGroup, PositionedBadge } from './Badge';
 export { default as Tag, TagGroup, FilterTag, StatusTag } from './Tag';
+export { default as Progress } from './Progress';
 export { default as Spinner, LoadingButton, LoadingOverlay } from './Spinner';
 export { default as Skeleton, SkeletonCard, SkeletonTable, SkeletonList, SkeletonForm, SkeletonProfile, SkeletonDashboard } from './Skeleton';
 export { default as Breadcrumbs, MobileBreadcrumbs, BreadcrumbWithDropdown } from './Breadcrumbs';

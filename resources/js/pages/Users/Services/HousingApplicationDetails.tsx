@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import AppLayout from '@/layouts/AppLayout';
+import PageHeader from '@/components/PageHeader';
+import { apiService, type User as ApiUser } from '../../../lib/api';
 import { Button } from '@/components/Button';
 import Card, { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/Card';
 import { Badge } from '@/components/Badge';
+import Progress from '@/components/Progress';
 import { TextArea } from '@/components/TextArea';
 import { 
   ArrowLeft,
@@ -73,7 +75,6 @@ interface HousingApplication {
   status: string;
   score: number | null;
   submitted_at: string;
-  eligibility_checked_at?: string;
   approved_at?: string;
   rejected_at?: string;
   
@@ -125,9 +126,6 @@ interface HousingApplication {
     name: string;
   };
   
-  // Eligibility & Decision
-  eligibility_passed: boolean | null;
-  eligibility_notes?: string;
   rejection_reason?: string;
   approval_notes?: string;
   offer_details?: string;
@@ -144,7 +142,38 @@ interface HousingApplication {
 const HousingApplicationDetails = ({ applicationId }: { applicationId: number }) => {
   const [application, setApplication] = useState<HousingApplication | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userData, setUserData] = useState<ApiUser | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Get user data on component mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        if (localUser && localUser.id) {
+          try {
+            const response = await apiService.getCurrentUser();
+            if (response.success && response.user) {
+              setUserData(response.user);
+            } else {
+              localStorage.removeItem('user');
+              setUserData(null);
+            }
+          } catch (error) {
+            localStorage.removeItem('user');
+            setUserData(null);
+          }
+        } else {
+          setUserData(null);
+        }
+      } catch (error) {
+        setUserData(null);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
   const [newDocument, setNewDocument] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
@@ -266,7 +295,6 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
     const statusConfig = {
       draft: { label: 'Draft', color: 'bg-gray-100 text-gray-800' },
       submitted: { label: 'Submitted', color: 'bg-blue-100 text-blue-800' },
-      eligibility_check: { label: 'Eligibility Check', color: 'bg-yellow-100 text-yellow-800' },
       document_verification: { label: 'Document Verification', color: 'bg-orange-100 text-orange-800' },
       field_inspection: { label: 'Field Inspection', color: 'bg-purple-100 text-purple-800' },
       final_review: { label: 'Final Review', color: 'bg-indigo-100 text-indigo-800' },
@@ -298,7 +326,6 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
       case 'draft':
         return <FileText className="w-5 h-5 text-gray-600" />;
       case 'submitted':
-      case 'eligibility_check':
       case 'document_verification':
       case 'field_inspection':
       case 'final_review':
@@ -362,7 +389,6 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
     switch (action) {
       case 'submitted':
         return <FileText className="w-4 h-4 text-blue-600" />;
-      case 'eligibility_checked':
         return <Shield className="w-4 h-4 text-yellow-600" />;
       case 'document_verified':
         return <CheckCircle className="w-4 h-4 text-green-600" />;
@@ -385,62 +411,78 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
     }
   };
 
+  const handleUserDataChange = (user: ApiUser | null) => {
+    setUserData(user);
+  };
+
+  const handleLogout = () => {
+    console.log('Logout completed');
+  };
+
   if (loading) {
     return (
-      <AppLayout>
-        <Head title="Application Details" />
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader 
+          userData={userData}
+          onUserDataChange={handleUserDataChange}
+          onLogout={handleLogout}
+        />
+        <div className="py-8">
+          <div className="max-w-6xl mx-auto px-4">
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          </div>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   if (!application) {
     return (
-      <AppLayout>
-        <Head title="Application Not Found" />
-        <div className="container mx-auto px-4 py-8">
-          <Card>
-            <CardContent className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader 
+          userData={userData}
+          onUserDataChange={handleUserDataChange}
+          onLogout={handleLogout}
+        />
+        <div className="py-8">
+          <div className="max-w-6xl mx-auto px-4">
+            <Card className="p-8 text-center">
+              <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Application Not Found</h3>
-              <p className="text-gray-600 mb-6">
-                The requested application could not be found.
-              </p>
+              <p className="text-gray-600 mb-6">The requested application could not be found.</p>
               <Link href="/my-housing-applications">
                 <Button>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Applications
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
+            </Card>
+          </div>
         </div>
-      </AppLayout>
+      </div>
     );
   }
 
   return (
-    <AppLayout>
-      <Head title={`Application ${application.application_number}`} />
+    <div className="min-h-screen bg-gray-50">
+      <PageHeader 
+        userData={userData}
+        onUserDataChange={handleUserDataChange}
+        onLogout={handleLogout}
+      />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
+      <div className="py-8">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* Back Button and Status */}
           <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
-              <Link href="/my-housing-applications">
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              </Link>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">{application.application_number}</h1>
-                <p className="text-gray-600">{application.full_name}</p>
-              </div>
-            </div>
+            <Link href="/my-housing-applications">
+              <Button variant="outlined">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Applications
+              </Button>
+            </Link>
             <div className="flex items-center space-x-2">
               {getStatusIcon(application.status)}
               {getStatusBadge(application.status)}
@@ -627,27 +669,6 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
                     </div>
                   </div>
 
-                  {/* Eligibility Score */}
-                  {application.score !== null && (
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
-                        <Shield className="w-5 h-5" />
-                        <span>Eligibility Score</span>
-                      </h3>
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-blue-800">Score: {application.score}%</span>
-                          <span className="text-sm text-blue-600">
-                            {application.eligibility_passed ? 'Eligible' : 'Not Eligible'}
-                          </span>
-                        </div>
-                        <Progress value={application.score} className="h-2" />
-                        {application.eligibility_notes && (
-                          <p className="text-sm text-blue-700 mt-2">{application.eligibility_notes}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Decision Information */}
                   {(application.approval_notes || application.rejection_reason) && (
@@ -704,7 +725,7 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
                             <Badge className={getVerificationStatusColor(document.verification_status)}>
                               {document.verification_status}
                             </Badge>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outlined" size="sm">
                               <Download className="w-4 h-4" />
                             </Button>
                           </div>
@@ -826,12 +847,6 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
                       <span className="text-gray-600">Submitted:</span>
                       <span>{formatDate(application.submitted_at || application.created_at)}</span>
                     </div>
-                    {application.eligibility_checked_at && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Eligibility Checked:</span>
-                        <span>{formatDate(application.eligibility_checked_at)}</span>
-                      </div>
-                    )}
                     {application.approved_at && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">Approved:</span>
@@ -884,9 +899,9 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
                     </Button>
                   )}
                   
-                  {['draft', 'submitted', 'eligibility_check'].includes(application.status) && (
+                  {['draft', 'submitted'].includes(application.status) && (
                     <Button 
-                      variant="outline" 
+                      variant="outlined" 
                       className="w-full"
                       onClick={handleWithdraw}
                     >
@@ -907,7 +922,7 @@ const HousingApplicationDetails = ({ applicationId }: { applicationId: number })
           </div>
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
 };
 
